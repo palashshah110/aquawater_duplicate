@@ -1,0 +1,128 @@
+[
+  {
+    "id": 1,
+    "name": "Smart Water Tank Overflow Alarm",
+    "category": "Overflow Protection",
+    "price": 2499,
+    "image": "/api/placeholder/400/400",
+    "rating": 4.8,
+    "reviews": 156,
+    "description": "Advanced overflow detection system with instant alerts via SMS and mobile app notifications.",
+    "features": [
+      "Real-time water level monitoring",
+      "SMS & App notifications",
+      "Battery backup included",
+      "Easy DIY installation"
+    ],
+    "specs": {
+      "warranty": "2 Years",
+      "power": "Battery + AC Adapter",
+      "compatibility": "All tank types"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Auto Cut-Off Controller Pro",
+    "category": "Auto Cut-Off",
+    "price": 3999,
+    "image": "/api/placeholder/400/400",
+    "rating": 4.9,
+    "reviews": 243,
+    "description": "Intelligent auto cut-off system that prevents overflow and saves water automatically.",
+    "features": [
+      "Automatic pump control",
+      "Dry run protection",
+      "Manual override option",
+      "Water usage tracking"
+    ],
+    "specs": {
+      "warranty": "3 Years",
+      "power": "220V AC",
+      "compatibility": "All motor types"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Water Level Sensor Kit",
+    "category": "Sensors",
+    "price": 1799,
+    "image": "/api/placeholder/400/400",
+    "rating": 4.6,
+    "reviews": 98,
+    "description": "Precision water level sensor with digital display and configurable alerts.",
+    "features": [
+      "LED level indicators",
+      "Adjustable alert levels",
+      "Weatherproof design",
+      "Long sensor cable"
+    ],
+    "specs": {
+      "warranty": "1 Year",
+      "power": "9V Battery",
+      "compatibility": "Underground & overhead tanks"
+    }
+  },
+  {
+    "id": 4,
+    "name": "WiFi Smart Tank Monitor",
+    "category": "IoT Solutions",
+    "price": 5499,
+    "image": "/api/placeholder/400/400",
+    "rating": 5.0,
+    "reviews": 187,
+    "description": "Complete IoT solution with cloud monitoring, analytics, and smart home integration.",
+    "features": [
+      "WiFi connectivity",
+      "Cloud dashboard access",
+      "Alexa & Google Home support",
+      "Historical data analytics"
+    ],
+    "specs": {
+      "warranty": "2 Years",
+      "power": "USB Type-C",
+      "compatibility": "2.4GHz WiFi"
+    }
+  },
+  {
+    "id": 5,
+    "name": "Dual Tank Controller",
+    "category": "Auto Cut-Off",
+    "price": 4799,
+    "image": "/api/placeholder/400/400",
+    "rating": 4.7,
+    "reviews": 134,
+    "description": "Manage two water tanks simultaneously with intelligent switching and overflow protection.",
+    "features": [
+      "Controls 2 tanks",
+      "Auto tank switching",
+      "Individual level monitoring",
+      "Energy efficient"
+    ],
+    "specs": {
+      "warranty": "3 Years",
+      "power": "220V AC",
+      "compatibility": "Dual tank setups"
+    }
+  },
+  {
+    "id": 6,
+    "name": "Ultrasonic Water Level Meter",
+    "category": "Sensors",
+    "price": 3299,
+    "image": "/api/placeholder/400/400",
+    "rating": 4.8,
+    "reviews": 112,
+    "description": "Non-contact ultrasonic technology for accurate water level measurement.",
+    "features": [
+      "No water contact needed",
+      "High accuracy ±1cm",
+      "Digital LCD display",
+      "Configurable alarms"
+    ],
+    "specs": {
+      "warranty": "2 Years",
+      "power": "12V DC Adapter",
+      "compatibility": "All tank materials"
+    }
+  }
+]
