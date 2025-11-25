@@ -105,7 +105,7 @@ const CTA = () => {
               <div className="hidden sm:block w-px h-12 bg-white/20" />
 
               <a
-                href="mailto:support@aquasafe.com"
+                href="mailto:support@shreeflow.com"
                 className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
               >
                 <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
@@ -113,7 +113,7 @@ const CTA = () => {
                 </div>
                 <div className="text-left">
                   <div className="text-sm text-white/70">Email Us</div>
-                  <div className="font-semibold">support@aquasafe.com</div>
+                  <div className="font-semibold">support@shreeflow.com</div>
                 </div>
               </a>
             </motion.div>

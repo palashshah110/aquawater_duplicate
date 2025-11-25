@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, Menu, X, Droplets } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import logo from '../assets/logo.png';
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -19,11 +19,10 @@ const Navbar = () => {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
           ? "bg-background/80 backdrop-blur-lg shadow-lg"
           : "bg-transparent"
-      }`}
+        }`}
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -34,11 +33,12 @@ const Navbar = () => {
             className="flex items-center gap-2"
           >
             <div className="relative">
-              <Droplets className="w-8 h-8 text-primary" />
-              <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse-glow" />
-            </div>
-            <span className="text-2xl font-bold text-gradient">AquaSafe</span>
-          </motion.div>
+            <img
+              src={logo}
+              alt="shreeflow"
+              className="h-20 w-20 md:h-32 md:w-32"
+            />          
+            </div></motion.div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">

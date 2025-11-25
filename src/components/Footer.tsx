@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Droplets, Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
-
+import logo from '../assets/logo.png';
 const Footer = () => {
   return (
     <footer className="relative bg-card border-t border-border">
@@ -26,8 +26,9 @@ const Footer = () => {
             transition={{ duration: 0.6 }}
           >
             <div className="flex items-center gap-2 mb-4">
-              <Droplets className="w-8 h-8 text-primary" />
-              <span className="text-2xl font-bold text-gradient">AquaSafe</span>
+              {/* <Droplets className="w-8 h-8 text-primary" /> */}
+              {/* <span className="text-2xl font-bold text-gradient">shreeflow</span> */}
+              <img src={logo} alt="shreeflow" className="w-50 h-40" />
             </div>
             <p className="text-muted-foreground mb-6">
               Leading provider of smart water tank management solutions. Protecting homes and businesses since 2018.
@@ -115,14 +116,18 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-primary flex-shrink-0" />
-                <a href="tel:+911234567890" className="text-muted-foreground hover:text-primary transition-colors">
-                  +91 123 456 7890
+                <a href="tel:+918168304716" className="text-muted-foreground hover:text-primary transition-colors">
+                  +91 8168304716
                 </a>
+                <a href="tel:+919599268300" className="text-muted-foreground hover:text-primary transition-colors">
+                  +91 9599268300
+                </a>
+
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <a href="mailto:support@aquasafe.com" className="text-muted-foreground hover:text-primary transition-colors">
-                  support@aquasafe.com
+                <a href="mailto:support@shreeflow.com" className="text-muted-foreground hover:text-primary transition-colors">
+                  support@shreeflow.com
                 </a>
               </div>
             </div>
@@ -139,7 +144,7 @@ const Footer = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-muted-foreground text-sm">
-              © 2024 AquaSafe. All rights reserved.
+              © 2024 Shreeflow. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">

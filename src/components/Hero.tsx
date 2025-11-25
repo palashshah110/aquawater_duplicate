@@ -1,152 +1,115 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, Zap, Droplet } from "lucide-react";
+import { ArrowRight, Droplet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Hero = () => {
   return (
     <section id="home" className="relative min-h-screen flex items-center overflow-hidden pt-20">
-      {/* Animated Background */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/20" />
-        
-        {/* Curved Overlay */}
-        <svg
-          className="absolute bottom-0 left-0 w-full h-auto"
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-        >
-          <motion.path
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.1 }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-            fill="currentColor"
-            className="text-primary"
-            d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,144C960,149,1056,139,1152,122.7C1248,107,1344,85,1392,74.7L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-          />
-        </svg>
+      {/* Clean Background with subtle gradient */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-background via-background to-primary/5" />
 
-        {/* Floating Elements */}
-        <motion.div
-          animate={{ y: [0, -20, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ y: [0, 20, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl"
-        />
-      </div>
-
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+      <div className="container mx-auto px-4 md:px-8">
+        <div className="grid md:grid-cols-2 gap-16 items-center max-w-7xl mx-auto">
           {/* Left Content */}
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-semibold mb-4">
-                Smart Water Management Solutions
-              </span>
-              <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-8"
+          >
+            <div className="space-y-6">
+              <motion.span 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="inline-block px-4 py-1.5 bg-primary/5 text-primary rounded-full text-sm font-medium border border-primary/10"
+              >
+                Smart Water Management
+              </motion.span>
+              
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
                 Never Worry About{" "}
-                <span className="text-gradient">Water Overflow</span> Again
+                <span className="text-gradient">Water Overflow</span>
               </h1>
-            </motion.div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-xl text-muted-foreground"
-            >
-              Advanced IoT-enabled water tank monitoring systems with automatic
-              overflow protection, real-time alerts, and intelligent water
-              management.
-            </motion.p>
+              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl">
+                IoT-enabled water tank monitoring with automatic overflow protection and real-time alerts.
+              </p>
+            </div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
               className="flex flex-wrap gap-4"
             >
-              <Button size="lg" className="bg-primary hover:bg-primary/90 group">
+              <Button size="lg" className="h-12 px-8 group">
                 Explore Products
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="h-12 px-8">
                 Watch Demo
               </Button>
             </motion.div>
 
-            {/* Features Pills */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-wrap gap-4 pt-6"
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="flex items-center gap-8 pt-4 text-sm text-muted-foreground"
             >
-              <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-lg card-shadow">
-                <Shield className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">2 Year Warranty</span>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span>2 Year Warranty</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-lg card-shadow">
-                <Zap className="w-5 h-5 text-accent" />
-                <span className="text-sm font-medium">Easy Installation</span>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span>Easy Setup</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-lg card-shadow">
-                <Droplet className="w-5 h-5 text-secondary" />
-                <span className="text-sm font-medium">Save Water</span>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span>Save Water</span>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
 
-          {/* Right Content - Animated Product Image */}
+          {/* Right Content - Clean Product Showcase */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.3 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
             className="relative"
           >
-            <div className="relative z-10">
-              {/* Main Product Card */}
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="bg-card rounded-3xl p-8 card-shadow border border-border/50"
-              >
-                <div className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
-                  <Droplet className="w-32 h-32 text-primary" />
+            <div className="relative">
+              {/* Main Product Display */}
+              <div className="relative bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl p-12 border border-border/50">
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="flex items-center justify-center"
+                >
+                  <div className="relative">
+                    <Droplet className="w-40 h-40 text-primary drop-shadow-2xl" />
+                    <div className="absolute inset-0 bg-primary/20 blur-3xl" />
+                  </div>
+                </motion.div>
+
+                {/* Clean Stats */}
+                <div className="grid grid-cols-2 gap-6 mt-12 pt-8 border-t border-border/30">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-foreground">99.9%</div>
+                    <div className="text-sm text-muted-foreground mt-1">Accuracy</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-foreground">24/7</div>
+                    <div className="text-sm text-muted-foreground mt-1">Monitoring</div>
+                  </div>
                 </div>
-                
-                {/* Floating Stats */}
-                <motion.div
-                  initial={{ opacity: 0, x: -50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.8, delay: 1 }}
-                  className="absolute -left-6 top-1/4 bg-card rounded-2xl p-4 card-shadow"
-                >
-                  <div className="text-2xl font-bold text-gradient">99.9%</div>
-                  <div className="text-xs text-muted-foreground">Accuracy</div>
-                </motion.div>
+              </div>
 
-                <motion.div
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.8, delay: 1.2 }}
-                  className="absolute -right-6 bottom-1/4 bg-card rounded-2xl p-4 card-shadow"
-                >
-                  <div className="text-2xl font-bold text-gradient">24/7</div>
-                  <div className="text-xs text-muted-foreground">Monitoring</div>
-                </motion.div>
-              </motion.div>
+              {/* Subtle Glow */}
+              <div className="absolute -inset-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl blur-2xl -z-10 opacity-60" />
             </div>
-
-            {/* Glow Effect */}
-            <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-3xl -z-10 animate-pulse-glow" />
           </motion.div>
         </div>
       </div>
