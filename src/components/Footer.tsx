@@ -28,7 +28,7 @@ const Footer = () => {
             <div className="flex items-center gap-2 mb-4">
               {/* <Droplets className="w-8 h-8 text-primary" /> */}
               {/* <span className="text-2xl font-bold text-gradient">shreeflow</span> */}
-              <img src={logo} alt="shreeflow" className="w-50 h-40" />
+              <img src={logo} alt="shreeflow" className="w-30 h-24" />
             </div>
             <p className="text-muted-foreground mb-6">
               Leading provider of smart water tank management solutions. Protecting homes and businesses since 2018.
@@ -53,6 +53,7 @@ const Footer = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
+            className="hidden md:block"
           >
             <h3 className="text-lg font-bold mb-4">Quick Links</h3>
             <ul className="space-y-3">
@@ -75,6 +76,7 @@ const Footer = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
+            className="hidden md:block"
           >
             <h3 className="text-lg font-bold mb-4">Products</h3>
             <ul className="space-y-3">
@@ -109,9 +111,9 @@ const Footer = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-muted-foreground">
-                  123 Tech Park, Innovation Street,
+                  28, Vijay Nagar,
                   <br />
-                  Bangalore, Karnataka 560001
+                  Indore, Madhya Pradesh 452010
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -144,19 +146,8 @@ const Footer = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-muted-foreground text-sm">
-              © 2024 Shreeflow. All rights reserved.
+              © 2025 Shreeflow. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                Terms of Service
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                Cookie Policy
-              </a>
-            </div>
           </div>
         </motion.div>
       </div>

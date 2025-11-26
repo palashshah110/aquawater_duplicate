@@ -68,71 +68,7 @@ const CTA = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="max-w-md mx-auto mb-8"
             >
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus-visible:ring-white/50"
-                />
-                <Button className="bg-white text-primary hover:bg-white/90">
-                  Subscribe
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              </div>
             </motion.div>
-
-            {/* Contact Options */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6"
-            >
-              <a
-                href="tel:+911234567890"
-                className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm text-white/70">Call Us</div>
-                  <div className="font-semibold">+91 123 456 7890</div>
-                </div>
-              </a>
-
-              <div className="hidden sm:block w-px h-12 bg-white/20" />
-
-              <a
-                href="mailto:support@shreeflow.com"
-                className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm text-white/70">Email Us</div>
-                  <div className="font-semibold">support@shreeflow.com</div>
-                </div>
-              </a>
-            </motion.div>
-          </motion.div>
-
-          {/* Trust Badges */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-12 border-t border-white/20"
-          >
-            {["2 Year Warranty", "Free Shipping", "24/7 Support", "Easy Returns"].map((item, i) => (
-              <div key={i} className="text-center text-white">
-                <div className="text-2xl font-bold mb-1">✓</div>
-                <div className="text-sm">{item}</div>
-              </div>
-            ))}
           </motion.div>
         </div>
       </div>

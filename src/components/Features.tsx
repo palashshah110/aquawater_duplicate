@@ -92,8 +92,7 @@ const Features = () => {
             Advanced technology meets simplicity for the ultimate water management experience
           </p>
         </motion.div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
           {features.map((feature, index) => (
             <FeatureCard key={index} feature={feature} index={index} />
           ))}
@@ -133,10 +132,10 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
       </motion.div>
 
       {/* Content */}
-      <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">
+      <h3 className="text-sm md:text-xl font-bold mb-3 group-hover:text-primary transition-colors">
         {feature.title}
       </h3>
-      <p className="text-muted-foreground leading-relaxed">
+      <p className="hidden md:block text-xs md:text-base text-muted-foreground leading-relaxed">
         {feature.description}
       </p>
 
