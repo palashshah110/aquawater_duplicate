@@ -40,10 +40,17 @@ const Products = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
+        <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
           {productsData.map((product, index) => (
             <ProductCard key={product.id} product={product} index={index} />
           ))}
+        </div>
+
+        {/* More Products Button */}
+        <div className="flex justify-center mt-12">
+          <Button size="lg" className="px-8">
+            More Products
+          </Button>
         </div>
       </div>
     </section>
