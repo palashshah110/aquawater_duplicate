@@ -43,7 +43,7 @@ const features = [
   }
 ];
 
-const Features = ({ showHeader=false }: { showHeader: boolean }) => {
+const Features = ({ showHeader = false }: { showHeader?: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
