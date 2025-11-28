@@ -36,7 +36,7 @@ const Navbar = () => {
             <img
               src={logo}
               alt="shreeflow"
-              className="h-20 w-20 md:h-30 md:w-36"
+              className="h-18 w-24 md:h-30 md:w-36"
             />          
             </div></motion.div>
 
