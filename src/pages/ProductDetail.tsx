@@ -175,7 +175,7 @@ const ProductDetail = () => {
                 className="w-full h-14 text-lg font-semibold"
                 onClick={handleBuyNow}
               >
-                Buy Now - ₹{product.price.toLocaleString()}
+                Buy Now
               </Button>
 
               {/* Trust Badges */}

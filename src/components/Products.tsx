@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { Star, Eye } from "lucide-react";
+import { Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import productsData from "@/data/products.json";
@@ -144,7 +144,7 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
           </div>
           <Link to={`/product/${product.id}`}>
             <Button size="icon" className="bg-primary hover:bg-primary/90 rounded-full w-6 h-6 md:w-12 md:h-12">
-              <Eye className="w-3 h-3 md:w-5 md:h-5" />
+              <ShoppingCart className="w-3 h-3 md:w-5 md:h-5" />
             </Button>
           </Link>
         </div>
