@@ -1,7 +1,8 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { Star, ShoppingCart } from "lucide-react";
+import { Star, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import productsData from "@/data/products.json";
 
 const Products = () => {
@@ -48,9 +49,11 @@ const Products = () => {
 
         {/* More Products Button */}
         <div className="flex justify-center mt-12">
-          <Button size="lg" className="px-8">
-            More Products
-          </Button>
+          <Link to="/products">
+            <Button size="lg" className="px-8">
+              View All Products
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
@@ -93,9 +96,11 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
 
         {/* Hover Overlay - Hidden on mobile */}
         <div className="hidden md:flex absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-end justify-center pb-6">
-          <Button className="bg-background text-foreground hover:bg-background/90">
-            Quick View
-          </Button>
+          <Link to={`/product/${product.id}`}>
+            <Button className="bg-background text-foreground hover:bg-background/90">
+              Quick View
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -137,9 +142,11 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
             </div>
             <div className="hidden md:block text-xs text-muted-foreground">Inclusive of all taxes</div>
           </div>
-          <Button size="icon" className="bg-primary hover:bg-primary/90 rounded-full w-6 h-6 md:w-12 md:h-12">
-            <ShoppingCart className="w-3 h-3 md:w-5 md:h-5" />
-          </Button>
+          <Link to={`/product/${product.id}`}>
+            <Button size="icon" className="bg-primary hover:bg-primary/90 rounded-full w-6 h-6 md:w-12 md:h-12">
+              <Eye className="w-3 h-3 md:w-5 md:h-5" />
+            </Button>
+          </Link>
         </div>
 
         {/* Features List - Hidden on mobile */}

@@ -1,6 +1,8 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { Smartphone, Zap, Shield, Cloud, Battery, Bell } from "lucide-react";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 const features = [
   {
@@ -41,7 +43,7 @@ const features = [
   }
 ];
 
-const Features = () => {
+const Features = ({ showHeader=false }: { showHeader: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -51,6 +53,9 @@ const Features = () => {
   const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
 
   return (
+    <>
+        {showHeader && <Navbar />}
+
     <section id="features" ref={containerRef} className="py-24 relative overflow-hidden">
       {/* Animated Background */}
       <motion.div
@@ -98,7 +103,9 @@ const Features = () => {
           ))}
         </div>
       </div>
-    </section>
+    </section>    
+    {showHeader && <Footer />}
+</>
   );
 };
 

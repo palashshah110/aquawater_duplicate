@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Menu, X, Droplets } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import logo from '../assets/logo.png';
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -24,7 +25,7 @@ const Navbar = () => {
           : "bg-transparent"
         }`}
     >
-      <div className="container mx-auto px-4 py-4 bg-background/80 backdrop-blur-lg shadow-lg">
+      <div className="container mx-auto px-4 py-4 backdrop-blur-lg">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <motion.div
@@ -42,34 +43,27 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#home" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/" className="text-foreground hover:text-primary transition-colors">
               Home
-            </a>
-            <a href="#products" className="text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/products" className="text-foreground hover:text-primary transition-colors">
               Products
-            </a>
-            <a href="#features" className="text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/features" className="text-foreground hover:text-primary transition-colors">
               Features
-            </a>
-            <a href="#about" className="text-foreground hover:text-primary transition-colors">
-              About
-            </a>
-            <a href="#contact" className="text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/contact" className="text-foreground hover:text-primary transition-colors">
               Contact
-            </a>
+            </Link>
           </div>
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground rounded-full text-xs flex items-center justify-center">
-                0
-              </span>
-            </Button>
-            <Button className="bg-primary hover:bg-primary/90">
-              Shop Now
-            </Button>
+            <Link to="/products">
+              <Button className="bg-primary hover:bg-primary/90">
+                Shop Now
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -89,24 +83,23 @@ const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden mt-4 pb-4 space-y-4"
           >
-            <a href="#home" className="block text-foreground hover:text-primary transition-colors">
+            <Link to="/" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
               Home
-            </a>
-            <a href="#products" className="block text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/products" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
               Products
-            </a>
-            <a href="#features" className="block text-foreground hover:text-primary transition-colors">
+            </Link>
+            <a href="/#features" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
               Features
             </a>
-            <a href="#about" className="block text-foreground hover:text-primary transition-colors">
-              About
-            </a>
-            <a href="#contact" className="block text-foreground hover:text-primary transition-colors">
+            <Link to="/contact" className="block text-foreground hover:text-primary transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
               Contact
-            </a>
-            <Button className="w-full bg-primary hover:bg-primary/90">
-              Shop Now
-            </Button>
+            </Link>
+            <Link to="/products" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button className="w-full bg-primary hover:bg-primary/90">
+                Shop Now
+              </Button>
+            </Link>
           </motion.div>
         )}
       </div>

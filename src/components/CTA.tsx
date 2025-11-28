@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Mail, Phone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 
 const CTA = () => {
   return (
@@ -60,7 +60,7 @@ const CTA = () => {
               Join thousands of satisfied customers who've transformed their water management
             </p>
 
-            {/* Newsletter Form */}
+            {/* CTA Button */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -68,6 +68,12 @@ const CTA = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="max-w-md mx-auto mb-8"
             >
+              <Link to="/products">
+                <Button size="lg" className="bg-white text-primary hover:bg-white/90 h-14 px-8 text-lg group">
+                  Shop Now
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </div>

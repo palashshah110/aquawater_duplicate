@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const slides = [
   {
@@ -29,7 +30,7 @@ const slides = [
     description: "Automatic cut-off system with 2-year warranty",
     buttonText: "View Details",
     badge: "Featured",
-    image: "https://images.unsplash.com/photo-1548198131-bb0d0e8e9f0a?w=1200&h=800&fit=crop"
+    image: "https://images.unsplash.com/photo-1627595226481-fddd0668f936?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   }
 ];
 
@@ -44,7 +45,7 @@ const Hero = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const nextSlide = () => {
+  const nextSlide = () => { 
     setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
 
@@ -121,13 +122,17 @@ const Hero = () => {
                 transition={{ duration: 0.5, delay: 0.7 }}
                 className="flex flex-wrap gap-4 pt-4"
               >
-                <Button size="lg" className="h-12 px-8 group">
-                  {slides[currentSlide].buttonText}
-                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button size="lg" variant="outline" className="h-12 px-8">
-                  Learn More
-                </Button>
+                <Link to="/products">
+                  <Button size="lg" className="h-12 px-8 group">
+                    {slides[currentSlide].buttonText}
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <a href="#features">
+                  <Button size="lg" variant="outline" className="h-12 px-8">
+                    Learn More
+                  </Button>
+                </a>
               </motion.div>
             </motion.div>
           </div>
