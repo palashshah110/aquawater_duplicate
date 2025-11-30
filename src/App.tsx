@@ -12,27 +12,64 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
 import Features from "./components/Features";
+
+// Admin imports
+import { AuthProvider } from "./admin/context/AuthContext";
+import ProtectedRoute from "./admin/components/ProtectedRoute";
+import AdminLayout from "./admin/components/AdminLayout";
+import Login from "./admin/pages/Login";
+import Dashboard from "./admin/pages/Dashboard";
+import Products from "./admin/pages/Products";
+import ProductForm from "./admin/pages/ProductForm";
+import Orders from "./admin/pages/Orders";
+import Banners from "./admin/pages/Banners";
+import BannerForm from "./admin/pages/BannerForm";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/products" element={<AllProducts />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/checkout/:id" element={<Checkout />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
-          <Route path="/features" element={ <Features showHeader={true}/>} />
-          <Route path="/contact" element={<Contact />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/products" element={<AllProducts />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/checkout/:id" element={<Checkout />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/features" element={<Features showHeader={true} />} />
+            <Route path="/contact" element={<Contact />} />
+
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<Login />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="products" element={<Products />} />
+              <Route path="products/new" element={<ProductForm />} />
+              <Route path="products/edit/:id" element={<ProductForm />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="banners" element={<Banners />} />
+              <Route path="banners/new" element={<BannerForm />} />
+              <Route path="banners/edit/:id" element={<BannerForm />} />
+            </Route>
+
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

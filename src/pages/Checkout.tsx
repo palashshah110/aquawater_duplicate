@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Shield, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Shield, Check, Loader2, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import productsData from "@/data/products.json";
+import axios from "axios";
 
 declare global {
   interface Window {
@@ -32,6 +34,7 @@ interface Product {
     power: string;
     compatibility: string;
   };
+  weight?: number; // Add weight for shipping calculation
 }
 
 interface CustomerDetails {
@@ -44,11 +47,32 @@ interface CustomerDetails {
   pincode: string;
 }
 
+interface ShippingCharge {
+  rate: number;
+  estimated_days: string;
+  courier_name: string;
+  courier_company_id: number;
+}
+
+interface ShipRocketTokenResponse {
+  token: string;
+}
+
+interface ShipRocketShippingResponse {
+  data: {
+    available_courier_companies: ShippingCharge[];
+  };
+}
+
 const Checkout = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
   const [errors, setErrors] = useState<Partial<CustomerDetails>>({});
+  const [shippingCharges, setShippingCharges] = useState<ShippingCharge[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingCharge | null>(null);
+  const [shiprocketToken, setShiprocketToken] = useState<string>("");
 
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
     name: "",
@@ -61,6 +85,68 @@ const Checkout = () => {
   });
 
   const product = productsData.find((p) => p.id === Number(id)) as Product | undefined;
+
+  // const calculateShippingCharges = async (): Promise<void> => {
+  //   if (!customerDetails.pincode || !product) {
+  //     toast.error("Please enter pincode to calculate shipping");
+  //     return;
+  //   }
+
+  //   setIsCalculatingShipping(true);
+  //   setShippingCharges([]);
+  //   setSelectedShipping(null);
+
+  //   try {
+  //     // Default pickup location (you might want to make this configurable)
+  //     const pickupPostcode = "400001"; // Mumbai
+  //     const weight = product.weight || 1; // Default to 1kg if weight not specified
+
+  //     const response = await axios.post<any>("http://localhost:5001/api/shiprocket/delivery-charges", {
+  //         pincode: customerDetails.pincode,
+  //     });
+
+  //     if (response.status !== 200) {
+  //       throw new Error(response.data.message || "Failed to calculate shipping");
+  //     }
+  //     setShippingCharges(response.data.data.available_courier_companies);
+  //     setSelectedShipping(response.data.data.available_courier_companies[0]);
+
+  //     toast.success("Shipping charges calculated successfully");
+  //   } catch (error) {
+  //     console.error("Error calculating shipping:", error);
+  //     toast.error(error instanceof Error ? error.message : "Failed to calculate shipping charges");
+  //   } finally {
+  //     setIsCalculatingShipping(false);
+  //   }
+  // };
+
+  // Auto-calculate shipping when pincode changes and is valid
+  const calculateShippingCharges = async () => {
+    setIsCalculatingShipping(true);
+    setShippingCharges([{
+      rate: 100,
+      estimated_days: "3-5 days",
+      courier_name: "ShipRocket",
+      courier_company_id: 1,
+    }]);
+    setSelectedShipping({
+      rate: 100,
+      estimated_days: "3-5 days",
+      courier_name: "ShipRocket",
+      courier_company_id: 1,
+    });
+    setIsCalculatingShipping(false);
+  };
+
+  useEffect(() => {
+    if (customerDetails.pincode.length === 6 && /^\d{6}$/.test(customerDetails.pincode)) {
+      const timer = setTimeout(() => {
+        calculateShippingCharges();
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [customerDetails.pincode]);
 
   if (!product) {
     return (
@@ -154,9 +240,20 @@ const Checkout = () => {
     });
   };
 
+  const getTotalAmount = (): number => {
+    const productPrice = product.price;
+    const shippingPrice = selectedShipping?.rate || 0;
+    return productPrice + shippingPrice;
+  };
+
   const handlePayment = async () => {
     if (!validateForm()) {
       toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    if (!selectedShipping) {
+      toast.error("Please wait for shipping charges to be calculated");
       return;
     }
 
@@ -171,13 +268,11 @@ const Checkout = () => {
         return;
       }
 
-      // In a real application, you would create an order on your backend
-      // and get the order_id from Razorpay API
-      // For demo purposes, we're using test mode configuration
+      const totalAmount = getTotalAmount();
 
       const options = {
-        key: "rzp_test_YOUR_KEY_ID", // Replace with your Razorpay Key ID
-        amount: product.price * 100, // Amount in paise
+        key: "rzp_test_RdgiS64CnkNCDH", // Replace with your Razorpay Key ID
+        amount: totalAmount * 100, // Amount in paise
         currency: "INR",
         name: "ShreeFlow",
         description: product.name,
@@ -193,6 +288,8 @@ const Checkout = () => {
               paymentId: response.razorpay_payment_id,
               product: product,
               customer: customerDetails,
+              shipping: selectedShipping,
+              totalAmount: totalAmount,
             },
           });
         },
@@ -205,6 +302,8 @@ const Checkout = () => {
           address: `${customerDetails.address}, ${customerDetails.city}, ${customerDetails.state} - ${customerDetails.pincode}`,
           product_id: product.id,
           product_name: product.name,
+          shipping_courier: selectedShipping.courier_name,
+          shipping_charges: selectedShipping.rate,
         },
         theme: {
           color: "#0070D0",
@@ -368,19 +467,70 @@ const Checkout = () => {
                   {/* Pincode */}
                   <div>
                     <Label htmlFor="pincode">Pincode *</Label>
-                    <Input
-                      id="pincode"
-                      name="pincode"
-                      placeholder="6-digit pincode"
-                      value={customerDetails.pincode}
-                      onChange={handleInputChange}
-                      className={errors.pincode ? "border-destructive" : ""}
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="pincode"
+                        name="pincode"
+                        placeholder="6-digit pincode"
+                        value={customerDetails.pincode}
+                        onChange={handleInputChange}
+                        className={errors.pincode ? "border-destructive" : ""}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={calculateShippingCharges}
+                        disabled={isCalculatingShipping || customerDetails.pincode.length !== 6}
+                      >
+                        {isCalculatingShipping ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Truck className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                     {errors.pincode && (
                       <p className="text-sm text-destructive mt-1">{errors.pincode}</p>
                     )}
                   </div>
                 </div>
+
+                {/* Shipping Options */}
+                {shippingCharges.length > 0 && (
+                  <div className="pt-4 border-t border-border">
+                    <Label className="text-lg font-semibold mb-3 block">
+                      Shipping Options
+                    </Label>
+                    <div className="space-y-3">
+                      {shippingCharges.map((shipping) => (
+                        <div
+                          key={shipping.courier_company_id}
+                          className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                            selectedShipping?.courier_company_id === shipping.courier_company_id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                          onClick={() => setSelectedShipping(shipping)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-4 h-4 rounded-full border-2 ${
+                              selectedShipping?.courier_company_id === shipping.courier_company_id
+                                ? "border-primary bg-primary"
+                                : "border-border"
+                            }`} />
+                            <div>
+                              <p className="font-medium">{shipping.courier_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Estimated delivery: {shipping.estimated_days}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="font-semibold">₹{shipping.rate}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -413,18 +563,30 @@ const Checkout = () => {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>₹{product.price.toLocaleString()}</span>
                   </div>
+                  
+                  {/* Shipping Charges */}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-primary">FREE</span>
+                    <span>
+                      {selectedShipping ? (
+                        `₹${selectedShipping.rate}`
+                      ) : isCalculatingShipping ? (
+                        <Loader2 className="w-4 h-4 animate-spin inline" />
+                      ) : (
+                        "Calculating..."
+                      )}
+                    </span>
                   </div>
+                  
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tax</span>
                     <span>Included</span>
                   </div>
+                  
                   <div className="flex justify-between pt-3 border-t border-border">
                     <span className="text-lg font-bold">Total</span>
                     <span className="text-2xl font-bold text-gradient">
-                      ₹{product.price.toLocaleString()}
+                      ₹{getTotalAmount().toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -434,7 +596,7 @@ const Checkout = () => {
                   size="lg"
                   className="w-full h-14 text-lg font-semibold"
                   onClick={handlePayment}
-                  disabled={isLoading}
+                  disabled={isLoading || !selectedShipping}
                 >
                   {isLoading ? (
                     <>
@@ -442,7 +604,7 @@ const Checkout = () => {
                       Processing...
                     </>
                   ) : (
-                    <>Pay ₹{product.price.toLocaleString()}</>
+                    <>Pay ₹{getTotalAmount().toLocaleString()}</>
                   )}
                 </Button>
 
@@ -456,6 +618,12 @@ const Checkout = () => {
                     <Check className="w-4 h-4 text-primary" />
                     100% safe & secure transactions
                   </div>
+                  {selectedShipping && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Truck className="w-4 h-4 text-primary" />
+                      Shipping via {selectedShipping.courier_name}
+                    </div>
+                  )}
                 </div>
 
                 {/* Payment Methods */}
