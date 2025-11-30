@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -9,6 +9,8 @@ import {
   Eye,
   MoreVertical,
   Filter,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,95 +38,80 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-
-// Mock data
-const initialProducts = [
-  {
-    id: '1',
-    name: 'Smart Water Tank Overflow Alarm',
-    category: 'Overflow Protection',
-    price: 2499,
-    stock: 45,
-    status: 'active',
-    image: '',
-  },
-  {
-    id: '2',
-    name: 'Auto Cut-Off Controller Pro',
-    category: 'Auto Cut-Off',
-    price: 3999,
-    stock: 32,
-    status: 'active',
-    image: '',
-  },
-  {
-    id: '3',
-    name: 'Water Level Sensor Kit',
-    category: 'Sensors',
-    price: 1799,
-    stock: 0,
-    status: 'inactive',
-    image: '',
-  },
-  {
-    id: '4',
-    name: 'WiFi Smart Tank Monitor',
-    category: 'IoT Solutions',
-    price: 5499,
-    stock: 18,
-    status: 'active',
-    image: '',
-  },
-  {
-    id: '5',
-    name: 'Dual Tank Controller',
-    category: 'Auto Cut-Off',
-    price: 4799,
-    stock: 25,
-    status: 'active',
-    image: '',
-  },
-  {
-    id: '6',
-    name: 'Ultrasonic Water Level Meter',
-    category: 'Sensors',
-    price: 3299,
-    stock: 12,
-    status: 'active',
-    image: '',
-  },
-];
+import { productsApi, Product ,Category} from '../services/api';
 
 const Products = () => {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categories, setCategories] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const categories = [...new Set(products.map((p) => p.category))];
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
-    const matchesCategory =
-      categoryFilter === 'all' || product.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params: any = { limit: 100 };
+      if (search) params.search = search;
+      if (categoryFilter !== 'all') params.category = categoryFilter;
+
+      const response = await productsApi.getAll(params);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Failed to fetch products');
+    } finally {
+      setLoading(false);
+    }
+  };
+  console.log(categories);
+  const fetchCategories = async () => {
+    try {
+      const response:any = await productsApi.getCategories();
+      console.log(response.data);
+      if (response.data.length > 0) {
+        setCategories(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, categoryFilter]);
 
   const handleDelete = (id: string) => {
     setProductToDelete(id);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (productToDelete) {
-      setProducts(products.filter((p) => p.id !== productToDelete));
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+
+    try {
+      setDeleting(true);
+      await productsApi.delete(productToDelete);
+      setProducts(products.filter((p) => p._id !== productToDelete));
       toast.success('Product deleted successfully');
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Failed to delete product');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
     }
-    setDeleteDialogOpen(false);
-    setProductToDelete(null);
   };
 
   return (
@@ -135,12 +122,18 @@ const Products = () => {
           <h1 className="text-2xl font-bold">Products</h1>
           <p className="text-muted-foreground">Manage your product inventory</p>
         </div>
-        <Link to="/admin/products/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchProducts} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-        </Link>
+          <Link to="/admin/products/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -161,9 +154,9 @@ const Products = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
+            {categories.map((cat:any) => (
+              <SelectItem key={cat._id} value={cat._id}>
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -176,123 +169,145 @@ const Products = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-card rounded-xl border border-border overflow-hidden"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Product
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden md:table-cell">
-                  Category
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Price
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
-                  Stock
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
-                  Status
-                </th>
-                <th className="text-right py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => (
-                <tr
-                  key={product.id}
-                  className="border-t border-border hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center shrink-0">
-                        <span className="text-xl">💧</span>
-                      </div>
-                      <div>
-                        <p className="font-medium line-clamp-1">{product.name}</p>
-                        <p className="text-sm text-muted-foreground md:hidden">
-                          {product.category}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 hidden md:table-cell">
-                    <span className="inline-block px-2 py-1 bg-primary/10 text-primary rounded text-sm">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 font-medium">
-                    ₹{product.price.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-4 hidden sm:table-cell">
-                    <span
-                      className={`${
-                        product.stock === 0
-                          ? 'text-red-500'
-                          : product.stock < 20
-                          ? 'text-yellow-500'
-                          : 'text-green-500'
-                      }`}
-                    >
-                      {product.stock}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 hidden sm:table-cell">
-                    <span
-                      className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        product.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/product/${product.id}`} target="_blank">
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/admin/products/edit/${product.id}`}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDelete(product.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No products found</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Product
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden md:table-cell">
+                      Category
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Price
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
+                      Stock
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
+                      Status
+                    </th>
+                    <th className="text-right py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr
+                      key={product._id}
+                      className="border-t border-border hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                            {product.images?.[0]?.url ? (
+                              <img
+                                src={product.images[0].url}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xl">💧</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium line-clamp-1">{product.name}</p>
+                            <p className="text-sm text-muted-foreground md:hidden">
+                              {(product?.category as Category)?.name}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 hidden md:table-cell">
+                        <span className="inline-block px-2 py-1 bg-primary/10 text-primary rounded text-sm">
+                          {(product?.category as Category)?.name}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 font-medium">
+                        ₹{product.price.toLocaleString()}
+                      </td>
+                      <td className="py-4 px-4 hidden sm:table-cell">
+                        <span
+                          className={`${
+                            product.stock === 0
+                              ? 'text-red-500'
+                              : product.stock < 20
+                              ? 'text-yellow-500'
+                              : 'text-green-500'
+                          }`}
+                        >
+                          {product.stock}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 hidden sm:table-cell">
+                        <span
+                          className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                            product.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {product.isActive ? 'active' : 'inactive'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/product/${product._id}`} target="_blank">
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/products/edit/${product._id}`}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleDelete(product._id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {products.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No products found</p>
+                <Link to="/admin/products/new" className="mt-4 inline-block">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Your First Product
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </motion.div>
 
@@ -307,12 +322,20 @@ const Products = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={deleting}
             >
-              Delete
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

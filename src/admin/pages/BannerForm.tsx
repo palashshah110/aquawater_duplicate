@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { bannersApi } from '../services/api';
 
 interface BannerFormData {
   title: string;
@@ -24,9 +25,13 @@ const BannerForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [image, setImage] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [newImage, setNewImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState<BannerFormData>({
     title: '',
     subtitle: '',
@@ -38,6 +43,41 @@ const BannerForm = () => {
     isActive: true,
   });
 
+  useEffect(() => {
+    if (isEditing && id) {
+      fetchBanner(id);
+    }
+  }, [id, isEditing]);
+
+  const fetchBanner = async (bannerId: string) => {
+    try {
+      setIsFetching(true);
+      const response = await bannersApi.getById(bannerId);
+      const banner = response.data;
+
+      setFormData({
+        title: banner.title,
+        subtitle: banner.subtitle || '',
+        description: banner.description || '',
+        buttonText: banner.buttonText,
+        buttonLink: banner.buttonLink,
+        badge: banner.badge || '',
+        order: banner.order.toString(),
+        isActive: banner.isActive,
+      });
+
+      if (banner.image?.url) {
+        setExistingImageUrl(banner.image.url);
+      }
+    } catch (error) {
+      console.error('Error fetching banner:', error);
+      toast.error('Failed to fetch banner');
+      navigate('/admin/banners');
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -48,12 +88,24 @@ const BannerForm = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setNewImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
   const removeImage = () => {
-    setImage(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setNewImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeExistingImage = () => {
+    setExistingImageUrl(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,22 +116,61 @@ const BannerForm = () => {
       return;
     }
 
-    if (!image && !isEditing) {
+    if (!newImage && !existingImageUrl && !isEditing) {
       toast.error('Please upload a banner image');
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const formDataToSend = new FormData();
 
-    toast.success(
-      isEditing ? 'Banner updated successfully' : 'Banner created successfully'
-    );
-    navigate('/admin/banners');
-    setIsLoading(false);
+      formDataToSend.append('title', formData.title);
+      if (formData.subtitle) {
+        formDataToSend.append('subtitle', formData.subtitle);
+      }
+      if (formData.description) {
+        formDataToSend.append('description', formData.description);
+      }
+      formDataToSend.append('buttonText', formData.buttonText);
+      formDataToSend.append('buttonLink', formData.buttonLink);
+      if (formData.badge) {
+        formDataToSend.append('badge', formData.badge);
+      }
+      formDataToSend.append('order', formData.order);
+      formDataToSend.append('isActive', formData.isActive.toString());
+
+      if (newImage) {
+        formDataToSend.append('image', newImage);
+      }
+
+      if (isEditing && id) {
+        await bannersApi.update(id, formDataToSend);
+        toast.success('Banner updated successfully');
+      } else {
+        await bannersApi.create(formDataToSend);
+        toast.success('Banner created successfully');
+      }
+
+      navigate('/admin/banners');
+    } catch (error: any) {
+      console.error('Error saving banner:', error);
+      toast.error(error.message || 'Failed to save banner');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const displayImage = imagePreview || existingImageUrl;
 
   return (
     <div className="space-y-6">
@@ -112,20 +203,25 @@ const BannerForm = () => {
                 Recommended size: 1920x800 pixels
               </p>
 
-              {image ? (
+              {displayImage ? (
                 <div className="relative aspect-[2.4/1] bg-muted rounded-lg overflow-hidden">
                   <img
-                    src={image}
+                    src={displayImage}
                     alt="Banner preview"
                     className="w-full h-full object-cover"
                   />
                   <button
                     type="button"
-                    onClick={removeImage}
+                    onClick={imagePreview ? removeImage : removeExistingImage}
                     className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
+                  {imagePreview && (
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded">
+                      New Image
+                    </span>
+                  )}
                 </div>
               ) : (
                 <label className="aspect-[2.4/1] border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
@@ -137,11 +233,30 @@ const BannerForm = () => {
                     PNG, JPG, WebP up to 10MB
                   </span>
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
                     className="hidden"
                   />
+                </label>
+              )}
+
+              {displayImage && !imagePreview && (
+                <label className="mt-4 block">
+                  <Button type="button" variant="outline" className="w-full" asChild>
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Replace Image
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </span>
+                  </Button>
                 </label>
               )}
             </div>
@@ -150,9 +265,9 @@ const BannerForm = () => {
             <div className="bg-card rounded-xl p-6 border border-border">
               <h2 className="text-lg font-semibold mb-4">Preview</h2>
               <div className="relative aspect-[2.4/1] bg-gradient-to-r from-background/95 via-background/70 to-transparent rounded-lg overflow-hidden">
-                {image && (
+                {displayImage && (
                   <img
-                    src={image}
+                    src={displayImage}
                     alt="Preview"
                     className="absolute inset-0 w-full h-full object-cover -z-10"
                   />

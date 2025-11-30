@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, X, Plus, Loader2 } from 'lucide-react';
@@ -15,8 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { productsApi } from '../services/api';
 
-const categories = [
+const defaultCategories = [
   'Overflow Protection',
   'Auto Cut-Off',
   'Sensors',
@@ -34,19 +35,33 @@ interface ProductFormData {
   warranty: string;
   power: string;
   compatibility: string;
+  dimensions: string;
+  weight: string;
   stock: string;
   sku: string;
   isActive: boolean;
   isFeatured: boolean;
+  tags: string[];
+}
+
+interface ExistingImage {
+  url: string;
+  publicId: string;
 }
 
 const ProductForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
+  const [categories, setCategories] = useState<string[]>(defaultCategories);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     category: '',
@@ -58,11 +73,68 @@ const ProductForm = () => {
     warranty: '1 Year',
     power: '',
     compatibility: '',
+    dimensions: '',
+    weight: '',
     stock: '',
     sku: '',
     isActive: true,
     isFeatured: false,
+    tags: [],
   });
+
+  useEffect(() => {
+    fetchCategories();
+    if (isEditing && id) {
+      fetchProduct(id);
+    }
+  }, [id, isEditing]);
+
+  const fetchCategories = async () => {
+    try {
+      const response:any = await productsApi.getCategories();
+      if (response.data.length > 0) {
+        setCategories(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchProduct = async (productId: string) => {
+    try {
+      setIsFetching(true);
+      const response = await productsApi.getById(productId);
+      const product = response.data;
+
+      setFormData({
+        name: product.name,
+        category: product.category,
+        price: product.price.toString(),
+        discountPrice: product.discountPrice?.toString() || '',
+        description: product.description,
+        shortDescription: product.shortDescription || '',
+        features: product.features.length > 0 ? product.features : [''],
+        warranty: product.specs.warranty || '1 Year',
+        power: product.specs.power || '',
+        compatibility: product.specs.compatibility || '',
+        dimensions: product.specs.dimensions || '',
+        weight: product.specs.weight || '',
+        stock: product.stock.toString(),
+        sku: product.sku || '',
+        isActive: product.isActive,
+        isFeatured: product.isFeatured,
+        tags: product.tags || [],
+      });
+
+      setExistingImages(product.images || []);
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      toast.error('Failed to fetch product');
+      navigate('/admin/products');
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -89,15 +161,36 @@ const ProductForm = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
-      setImages((prev) => [...prev, ...newImages].slice(0, 5));
+      const totalImages = existingImages.length - imagesToDelete.length + newImages.length + files.length;
+      if (totalImages > 5) {
+        toast.error('Maximum 5 images allowed');
+        return;
+      }
+
+      const newFilesArray = Array.from(files);
+      setNewImages((prev) => [...prev, ...newFilesArray]);
+
+      const newPreviews = newFilesArray.map((file) => URL.createObjectURL(file));
+      setNewImagePreviews((prev) => [...prev, ...newPreviews]);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const removeNewImage = (index: number) => {
+    URL.revokeObjectURL(newImagePreviews[index]);
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (publicId: string) => {
+    setImagesToDelete((prev) => [...prev, publicId]);
+  };
+
+  const restoreExistingImage = (publicId: string) => {
+    setImagesToDelete((prev) => prev.filter((id) => id !== publicId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,17 +201,85 @@ const ProductForm = () => {
       return;
     }
 
+    const totalImages = existingImages.length - imagesToDelete.length + newImages.length;
+    if (totalImages === 0 && !isEditing) {
+      toast.error('Please upload at least one image');
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const formDataToSend = new FormData();
 
-    toast.success(
-      isEditing ? 'Product updated successfully' : 'Product created successfully'
-    );
-    navigate('/admin/products');
-    setIsLoading(false);
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('price', formData.price);
+      if (formData.discountPrice) {
+        formDataToSend.append('discountPrice', formData.discountPrice);
+      }
+      formDataToSend.append('description', formData.description);
+      if (formData.shortDescription) {
+        formDataToSend.append('shortDescription', formData.shortDescription);
+      }
+
+      const filteredFeatures = formData.features.filter((f) => f.trim() !== '');
+      formDataToSend.append('features', JSON.stringify(filteredFeatures));
+
+      const specs = {
+        warranty: formData.warranty,
+        power: formData.power,
+        compatibility: formData.compatibility,
+        dimensions: formData.dimensions,
+        weight: formData.weight,
+      };
+      formDataToSend.append('specs', JSON.stringify(specs));
+
+      formDataToSend.append('stock', formData.stock || '0');
+      if (formData.sku) {
+        formDataToSend.append('sku', formData.sku);
+      }
+      formDataToSend.append('isActive', formData.isActive.toString());
+      formDataToSend.append('isFeatured', formData.isFeatured.toString());
+      formDataToSend.append('tags', JSON.stringify(formData.tags));
+
+      newImages.forEach((file) => {
+        formDataToSend.append('images', file);
+      });
+
+      if (isEditing && imagesToDelete.length > 0) {
+        formDataToSend.append('imagesToDelete', JSON.stringify(imagesToDelete));
+      }
+
+      if (isEditing && id) {
+        await productsApi.update(id, formDataToSend);
+        toast.success('Product updated successfully');
+      } else {
+        await productsApi.create(formDataToSend);
+        toast.success('Product created successfully');
+      }
+
+      navigate('/admin/products');
+    } catch (error: any) {
+      console.error('Error saving product:', error);
+      toast.error(error.message || 'Failed to save product');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const visibleExistingImages = existingImages.filter(
+    (img) => !imagesToDelete.includes(img.publicId)
+  );
+  const totalVisibleImages = visibleExistingImages.length + newImages.length;
 
   return (
     <div className="space-y-6">
@@ -176,9 +337,9 @@ const ProductForm = () => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
+                      {categories.map((cat:any) => (
+                        <SelectItem key={cat._id} value={cat._id}>
+                          {cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -236,36 +397,77 @@ const ProductForm = () => {
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {images.map((img, index) => (
+                {/* Existing Images */}
+                {existingImages.map((img, index) => {
+                  const isDeleted = imagesToDelete.includes(img.publicId);
+                  return (
+                    <div
+                      key={img.publicId}
+                      className={`relative aspect-square bg-muted rounded-lg overflow-hidden group ${
+                        isDeleted ? 'opacity-40' : ''
+                      }`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Product ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {isDeleted ? (
+                        <button
+                          type="button"
+                          onClick={() => restoreExistingImage(img.publicId)}
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-sm"
+                        >
+                          Click to restore
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(img.publicId)}
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                      {index === 0 && !isDeleted && (
+                        <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded">
+                          Main
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* New Image Previews */}
+                {newImagePreviews.map((preview, index) => (
                   <div
-                    key={index}
+                    key={`new-${index}`}
                     className="relative aspect-square bg-muted rounded-lg overflow-hidden group"
                   >
                     <img
-                      src={img}
-                      alt={`Product ${index + 1}`}
+                      src={preview}
+                      alt={`New ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeNewImage(index)}
                       className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-4 h-4" />
                     </button>
-                    {index === 0 && (
-                      <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded">
-                        Main
-                      </span>
-                    )}
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded">
+                      New
+                    </span>
                   </div>
                 ))}
 
-                {images.length < 5 && (
+                {totalVisibleImages < 5 && (
                   <label className="aspect-square border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
                     <Upload className="w-8 h-8 text-muted-foreground mb-2" />
                     <span className="text-sm text-muted-foreground">Upload</span>
                     <input
+                      ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       multiple
@@ -354,6 +556,30 @@ const ProductForm = () => {
                     value={formData.compatibility}
                     onChange={handleInputChange}
                     placeholder="e.g., All tank types"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dimensions">Dimensions</Label>
+                  <Input
+                    id="dimensions"
+                    name="dimensions"
+                    value={formData.dimensions}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 10x5x3 cm"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="weight">Weight</Label>
+                  <Input
+                    id="weight"
+                    name="weight"
+                    value={formData.weight}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 200g"
                     className="mt-1"
                   />
                 </div>

@@ -6,6 +6,7 @@ import {
   Package,
   ShoppingCart,
   Image,
+  FolderOpen,
   LogOut,
   Menu,
   X,
@@ -17,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
   { icon: Package, label: 'Products', path: '/admin/products' },
+  { icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
   { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
   { icon: Image, label: 'Banners', path: '/admin/banners' },
 ];
@@ -31,7 +33,8 @@ const AdminLayout = () => {
     logout();
     navigate('/admin/login');
   };
-
+  const user = localStorage.getItem('adminUser');
+  const userData = user ? JSON.parse(user) : null;
   return (
     <div className="min-h-screen bg-background flex">
       {/* Mobile Overlay */}
@@ -120,9 +123,9 @@ const AdminLayout = () => {
             </Link>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium">P</span>
+                <span className="text-sm font-medium">A</span>
               </div>
-              <span className="hidden sm:inline text-sm font-medium">palash</span>
+              <span className="hidden sm:inline text-sm font-medium">{userData.name}</span>
             </div>
           </div>
         </header>

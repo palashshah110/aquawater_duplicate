@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Package,
@@ -6,6 +8,7 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
+  Loader2,
 } from 'lucide-react';
 import {
   LineChart,
@@ -21,42 +24,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-
-// Mock data for charts
-const revenueData = [
-  { month: 'Jan', revenue: 45000 },
-  { month: 'Feb', revenue: 52000 },
-  { month: 'Mar', revenue: 48000 },
-  { month: 'Apr', revenue: 61000 },
-  { month: 'May', revenue: 55000 },
-  { month: 'Jun', revenue: 67000 },
-  { month: 'Jul', revenue: 72000 },
-];
-
-const ordersData = [
-  { day: 'Mon', orders: 12 },
-  { day: 'Tue', orders: 19 },
-  { day: 'Wed', orders: 15 },
-  { day: 'Thu', orders: 22 },
-  { day: 'Fri', orders: 28 },
-  { day: 'Sat', orders: 35 },
-  { day: 'Sun', orders: 18 },
-];
-
-const categoryData = [
-  { name: 'Overflow Protection', value: 35, color: '#0070D0' },
-  { name: 'Auto Cut-Off', value: 30, color: '#00BCD4' },
-  { name: 'Sensors', value: 20, color: '#4CAF50' },
-  { name: 'IoT Solutions', value: 15, color: '#FF9800' },
-];
-
-const recentOrders = [
-  { id: 'SF2024001', customer: 'Rahul Sharma', product: 'Smart Water Tank Alarm', amount: 2499, status: 'delivered' },
-  { id: 'SF2024002', customer: 'Priya Patel', product: 'Auto Cut-Off Controller', amount: 3999, status: 'shipped' },
-  { id: 'SF2024003', customer: 'Amit Kumar', product: 'WiFi Smart Monitor', amount: 5499, status: 'processing' },
-  { id: 'SF2024004', customer: 'Sneha Reddy', product: 'Water Level Sensor', amount: 1799, status: 'confirmed' },
-  { id: 'SF2024005', customer: 'Vikram Singh', product: 'Dual Tank Controller', amount: 4799, status: 'pending' },
-];
+import { ordersApi, productsApi, Order, Category } from '../services/api';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -67,11 +35,111 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+const categoryColors: Record<string, string> = {
+  'Overflow Protection': '#0070D0',
+  'Auto Cut-Off': '#00BCD4',
+  Sensors: '#4CAF50',
+  'IoT Solutions': '#FF9800',
+};
+
+// Mock chart data (would need backend endpoints for real data)
+const revenueData = [
+  { month: 'Jan', revenue: 45000 },
+  { month: 'Feb', revenue: 52000 },
+  { month: 'Mar', revenue: 48000 },
+  { month: 'Apr', revenue: 61000 },
+  { month: 'May', revenue: 55000 },
+  { month: 'Jun', revenue: 67000 },
+  { month: 'Jul', revenue: 72000 },
+];
+
+const ordersChartData = [
+  { day: 'Mon', orders: 12 },
+  { day: 'Tue', orders: 19 },
+  { day: 'Wed', orders: 15 },
+  { day: 'Thu', orders: 22 },
+  { day: 'Fri', orders: 28 },
+  { day: 'Sat', orders: 35 },
+  { day: 'Sun', orders: 18 },
+];
+
 const Dashboard = () => {
-  const stats = [
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    pendingOrders: 0,
+  });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [categoryData, setCategoryData] = useState<{ name: string; value: number; color: string }[]>([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch order stats
+      const orderStatsRes = await ordersApi.getStats();
+
+      // Fetch products for count and categories
+      const productsRes = await productsApi.getAll({ limit: 100 });
+
+      // Fetch recent orders
+      const ordersRes = await ordersApi.getAll({ limit: 5 });
+
+      // Calculate category distribution
+      const categoryCount: Record<string, number> = {};
+      productsRes.data.forEach((product) => {
+        categoryCount[(product.category as Category)?.name] = (categoryCount[(product.category as Category)?.name] || 0) + 1;
+      });
+
+      const total = productsRes.data.length || 1;
+      const categoryDistribution = Object.entries(categoryCount).map(([name, count]) => ({
+        name,
+        value: Math.round((count / total) * 100),
+        color: categoryColors[name] || '#888888',
+      }));
+
+      setStats({
+        totalRevenue: orderStatsRes.data.totalRevenue,
+        totalOrders: orderStatsRes.data.totalOrders,
+        totalProducts: productsRes.pagination.total,
+        pendingOrders: orderStatsRes.data.pendingOrders,
+      });
+
+      setRecentOrders(ordersRes.data);
+      setCategoryData(
+        categoryDistribution.length > 0
+          ? categoryDistribution
+          : [
+              { name: 'Overflow Protection', value: 35, color: '#0070D0' },
+              { name: 'Auto Cut-Off', value: 30, color: '#00BCD4' },
+              { name: 'Sensors', value: 20, color: '#4CAF50' },
+              { name: 'IoT Solutions', value: 15, color: '#FF9800' },
+            ]
+      );
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Use fallback mock data if API fails
+      setCategoryData([
+        { name: 'Overflow Protection', value: 35, color: '#0070D0' },
+        { name: 'Auto Cut-Off', value: 30, color: '#00BCD4' },
+        { name: 'Sensors', value: 20, color: '#4CAF50' },
+        { name: 'IoT Solutions', value: 15, color: '#FF9800' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsCards = [
     {
       title: 'Total Revenue',
-      value: '₹4,00,000',
+      value: `₹${stats.totalRevenue.toLocaleString()}`,
       change: '+12.5%',
       isPositive: true,
       icon: IndianRupee,
@@ -79,7 +147,7 @@ const Dashboard = () => {
     },
     {
       title: 'Total Orders',
-      value: '156',
+      value: stats.totalOrders.toString(),
       change: '+8.2%',
       isPositive: true,
       icon: ShoppingCart,
@@ -87,21 +155,29 @@ const Dashboard = () => {
     },
     {
       title: 'Products',
-      value: '24',
+      value: stats.totalProducts.toString(),
       change: '+2',
       isPositive: true,
       icon: Package,
       color: 'bg-purple-500',
     },
     {
-      title: 'Conversion Rate',
-      value: '3.2%',
-      change: '-0.4%',
-      isPositive: false,
+      title: 'Pending Orders',
+      value: stats.pendingOrders.toString(),
+      change: stats.pendingOrders > 0 ? 'Needs attention' : 'All clear',
+      isPositive: stats.pendingOrders === 0,
       icon: TrendingUp,
       color: 'bg-orange-500',
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -113,7 +189,7 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {statsCards.map((stat, index) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}
@@ -195,7 +271,7 @@ const Dashboard = () => {
           <h3 className="text-lg font-semibold mb-4">Weekly Orders</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ordersData}>
+              <BarChart data={ordersChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="day" stroke="#888" />
                 <YAxis stroke="#888" />
@@ -222,7 +298,7 @@ const Dashboard = () => {
           transition={{ delay: 0.6 }}
           className="bg-card rounded-xl p-6 border border-border"
         >
-          <h3 className="text-lg font-semibold mb-4">Sales by Category</h3>
+          <h3 className="text-lg font-semibold mb-4">Products by Category</h3>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -275,12 +351,9 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Recent Orders</h3>
-            <a
-              href="/admin/orders"
-              className="text-sm text-primary hover:underline"
-            >
+            <Link to="/admin/orders" className="text-sm text-primary hover:underline">
               View All
-            </a>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -304,27 +377,35 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-border last:border-0">
-                    <td className="py-3 px-2 text-sm font-medium">{order.id}</td>
-                    <td className="py-3 px-2 text-sm">{order.customer}</td>
-                    <td className="py-3 px-2 text-sm hidden sm:table-cell text-muted-foreground">
-                      {order.product}
-                    </td>
-                    <td className="py-3 px-2 text-sm font-medium">
-                      ₹{order.amount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-2">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium capitalize ${
-                          statusColors[order.status]
-                        }`}
-                      >
-                        {order.status}
-                      </span>
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order) => (
+                    <tr key={order._id} className="border-b border-border last:border-0">
+                      <td className="py-3 px-2 text-sm font-medium">{order.orderId}</td>
+                      <td className="py-3 px-2 text-sm">{order.customer.name}</td>
+                      <td className="py-3 px-2 text-sm hidden sm:table-cell text-muted-foreground">
+                        {order.product.name}
+                      </td>
+                      <td className="py-3 px-2 text-sm font-medium">
+                        ₹{order.totalAmount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span
+                          className={`inline-block px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                            statusColors[order.orderStatus]
+                          }`}
+                        >
+                          {order.orderStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      No orders yet
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

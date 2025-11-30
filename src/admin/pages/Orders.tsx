@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -7,6 +7,8 @@ import {
   MoreVertical,
   Filter,
   Download,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,130 +42,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-
-// Mock data
-const initialOrders = [
-  {
-    id: '1',
-    orderId: 'SF2024001',
-    customer: {
-      name: 'Rahul Sharma',
-      email: 'rahul@email.com',
-      phone: '9876543210',
-    },
-    shippingAddress: {
-      address: '123 Main Street',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400001',
-    },
-    product: {
-      name: 'Smart Water Tank Overflow Alarm',
-      price: 2499,
-      quantity: 1,
-    },
-    totalAmount: 2499,
-    orderStatus: 'delivered',
-    paymentStatus: 'completed',
-    createdAt: '2024-01-15T10:30:00',
-  },
-  {
-    id: '2',
-    orderId: 'SF2024002',
-    customer: {
-      name: 'Priya Patel',
-      email: 'priya@email.com',
-      phone: '9876543211',
-    },
-    shippingAddress: {
-      address: '456 Park Avenue',
-      city: 'Delhi',
-      state: 'Delhi',
-      pincode: '110001',
-    },
-    product: {
-      name: 'Auto Cut-Off Controller Pro',
-      price: 3999,
-      quantity: 1,
-    },
-    totalAmount: 3999,
-    orderStatus: 'shipped',
-    paymentStatus: 'completed',
-    createdAt: '2024-01-16T14:20:00',
-  },
-  {
-    id: '3',
-    orderId: 'SF2024003',
-    customer: {
-      name: 'Amit Kumar',
-      email: 'amit@email.com',
-      phone: '9876543212',
-    },
-    shippingAddress: {
-      address: '789 Lake View',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      pincode: '560001',
-    },
-    product: {
-      name: 'WiFi Smart Tank Monitor',
-      price: 5499,
-      quantity: 1,
-    },
-    totalAmount: 5499,
-    orderStatus: 'processing',
-    paymentStatus: 'completed',
-    createdAt: '2024-01-17T09:15:00',
-  },
-  {
-    id: '4',
-    orderId: 'SF2024004',
-    customer: {
-      name: 'Sneha Reddy',
-      email: 'sneha@email.com',
-      phone: '9876543213',
-    },
-    shippingAddress: {
-      address: '321 Hill Road',
-      city: 'Hyderabad',
-      state: 'Telangana',
-      pincode: '500001',
-    },
-    product: {
-      name: 'Water Level Sensor Kit',
-      price: 1799,
-      quantity: 2,
-    },
-    totalAmount: 3598,
-    orderStatus: 'confirmed',
-    paymentStatus: 'completed',
-    createdAt: '2024-01-18T11:45:00',
-  },
-  {
-    id: '5',
-    orderId: 'SF2024005',
-    customer: {
-      name: 'Vikram Singh',
-      email: 'vikram@email.com',
-      phone: '9876543214',
-    },
-    shippingAddress: {
-      address: '654 Garden City',
-      city: 'Pune',
-      state: 'Maharashtra',
-      pincode: '411001',
-    },
-    product: {
-      name: 'Dual Tank Controller',
-      price: 4799,
-      quantity: 1,
-    },
-    totalAmount: 4799,
-    orderStatus: 'pending',
-    paymentStatus: 'pending',
-    createdAt: '2024-01-19T16:30:00',
-  },
-];
+import { ordersApi, Order } from '../services/api';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -172,6 +51,13 @@ const statusColors: Record<string, string> = {
   shipped: 'bg-indigo-100 text-indigo-800',
   delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
+};
+
+const paymentStatusColors: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  completed: 'bg-green-100 text-green-800',
+  failed: 'bg-red-100 text-red-800',
+  refunded: 'bg-gray-100 text-gray-800',
 };
 
 const statusOptions = [
@@ -184,36 +70,66 @@ const statusOptions = [
 ];
 
 const Orders = () => {
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState<typeof initialOrders[0] | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.orderId.toLowerCase().includes(search.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(search.toLowerCase()) ||
-      order.customer.email.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || order.orderStatus === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-  const handleViewOrder = (order: typeof initialOrders[0]) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchOrders();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, statusFilter]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const params: any = { limit: 100 };
+      if (search) params.search = search;
+      if (statusFilter !== 'all') params.status = statusFilter;
+
+      const response = await ordersApi.getAll(params);
+      setOrders(response.data);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to fetch orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
     setViewDialogOpen(true);
   };
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, orderStatus: newStatus } : order
-      )
-    );
-    toast.success('Order status updated');
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      setUpdatingStatus(orderId);
+      await ordersApi.updateStatus(orderId, { orderStatus: newStatus });
+      setOrders(
+        orders.map((order) =>
+          order._id === orderId ? { ...order, orderStatus: newStatus } : order
+        )
+      );
+      toast.success('Order status updated');
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -221,13 +137,22 @@ const Orders = () => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (orderToDelete) {
-      setOrders(orders.filter((o) => o.id !== orderToDelete));
+  const confirmDelete = async () => {
+    if (!orderToDelete) return;
+
+    try {
+      setDeleting(true);
+      await ordersApi.delete(orderToDelete);
+      setOrders(orders.filter((o) => o._id !== orderToDelete));
       toast.success('Order deleted successfully');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
     }
-    setDeleteDialogOpen(false);
-    setOrderToDelete(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -248,10 +173,16 @@ const Orders = () => {
           <h1 className="text-2xl font-bold">Orders</h1>
           <p className="text-muted-foreground">Manage customer orders</p>
         </div>
-        <Button variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchOrders} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -287,119 +218,132 @@ const Orders = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-card rounded-xl border border-border overflow-hidden"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Order ID
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Customer
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden md:table-cell">
-                  Product
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Amount
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Status
-                </th>
-                <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
-                  Date
-                </th>
-                <th className="text-right py-4 px-4 text-sm font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-t border-border hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <span className="font-medium text-primary">{order.orderId}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div>
-                      <p className="font-medium">{order.customer.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {order.customer.email}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 hidden md:table-cell">
-                    <p className="line-clamp-1">{order.product.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Qty: {order.product.quantity}
-                    </p>
-                  </td>
-                  <td className="py-4 px-4 font-medium">
-                    ₹{order.totalAmount.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-4">
-                    <Select
-                      value={order.orderStatus}
-                      onValueChange={(value) => handleStatusChange(order.id, value)}
-                    >
-                      <SelectTrigger className="w-[130px] h-8">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                            statusColors[order.orderStatus]
-                          }`}
-                        >
-                          {order.orderStatus}
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map((status) => (
-                          <SelectItem key={status} value={status} className="capitalize">
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="py-4 px-4 text-sm text-muted-foreground hidden sm:table-cell">
-                    {formatDate(order.createdAt)}
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewOrder(order)}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDelete(order.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No orders found</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Order ID
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Customer
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden md:table-cell">
+                      Product
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Amount
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Status
+                    </th>
+                    <th className="text-left py-4 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
+                      Date
+                    </th>
+                    <th className="text-right py-4 px-4 text-sm font-medium text-muted-foreground">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr
+                      key={order._id}
+                      className="border-t border-border hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <span className="font-medium text-primary">{order.orderId}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div>
+                          <p className="font-medium">{order.customer.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {order.customer.email}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 hidden md:table-cell">
+                        <p className="line-clamp-1">{order.product.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Qty: {order.product.quantity}
+                        </p>
+                      </td>
+                      <td className="py-4 px-4 font-medium">
+                        ₹{order.totalAmount.toLocaleString()}
+                      </td>
+                      <td className="py-4 px-4">
+                        <Select
+                          value={order.orderStatus}
+                          onValueChange={(value) => handleStatusChange(order._id, value)}
+                          disabled={updatingStatus === order._id}
+                        >
+                          <SelectTrigger className="w-[130px] h-8">
+                            {updatingStatus === order._id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                                  statusColors[order.orderStatus]
+                                }`}
+                              >
+                                {order.orderStatus}
+                              </span>
+                            )}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statusOptions.map((status) => (
+                              <SelectItem key={status} value={status} className="capitalize">
+                                {status}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="py-4 px-4 text-sm text-muted-foreground hidden sm:table-cell">
+                        {formatDate(order.createdAt)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewOrder(order)}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleDelete(order._id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {orders.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No orders found</p>
+              </div>
+            )}
+          </>
         )}
       </motion.div>
 
@@ -440,8 +384,16 @@ const Orders = () => {
               <div className="bg-muted/50 rounded-lg p-4">
                 <h4 className="font-semibold mb-2">Product</h4>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center">
-                    <span className="text-2xl">💧</span>
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center overflow-hidden">
+                    {selectedOrder.product.image ? (
+                      <img
+                        src={selectedOrder.product.image}
+                        alt={selectedOrder.product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl">💧</span>
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{selectedOrder.product.name}</p>
@@ -455,7 +407,57 @@ const Orders = () => {
                 </div>
               </div>
 
+              {/* Payment Info */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Payment Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Method</p>
+                    <p className="font-medium capitalize">{selectedOrder.payment.method}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Status</p>
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        paymentStatusColors[selectedOrder.payment.status]
+                      }`}
+                    >
+                      {selectedOrder.payment.status}
+                    </span>
+                  </div>
+                  {selectedOrder.payment.razorpayPaymentId && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Payment ID</p>
+                      <p className="font-mono text-xs">{selectedOrder.payment.razorpayPaymentId}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Order Summary */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Order Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>₹{selectedOrder.subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span>₹{selectedOrder.shippingCharge.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>₹{selectedOrder.tax.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-border font-bold">
+                    <span>Total</span>
+                    <span>₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status & Tracking */}
               <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
                 <div>
                   <p className="text-sm text-muted-foreground">Order Status</p>
@@ -467,12 +469,12 @@ const Orders = () => {
                     {selectedOrder.orderStatus}
                   </span>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="text-2xl font-bold text-gradient">
-                    ₹{selectedOrder.totalAmount.toLocaleString()}
-                  </p>
-                </div>
+                {selectedOrder.trackingNumber && (
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Tracking Number</p>
+                    <p className="font-mono">{selectedOrder.trackingNumber}</p>
+                  </div>
+                )}
               </div>
 
               {/* Order Date */}
@@ -495,12 +497,20 @@ const Orders = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={deleting}
             >
-              Delete
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

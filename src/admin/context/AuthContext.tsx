@@ -1,8 +1,9 @@
+import axios from 'axios';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -25,11 +26,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return localStorage.getItem('adminAuth') === 'true';
   });
 
-  const login = (username: string, password: string): boolean => {
+  const login = async(username: string, password: string): Promise<boolean> => {
     // Static credentials check
-    if (username === 'admin' && password === 'admin') {
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { email: username, password });
+    if (response.status === 200) {
       setIsAuthenticated(true);
       localStorage.setItem('adminAuth', 'true');
+      localStorage.setItem('adminToken', response.data.token);
+      localStorage.setItem('adminUser', JSON.stringify(response.data.data));
       return true;
     }
     return false;
