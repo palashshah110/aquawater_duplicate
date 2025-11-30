@@ -108,7 +108,7 @@ const ProductForm = () => {
 
       setFormData({
         name: product.name,
-        category: product.category,
+        category: (product.category as any)._id,
         price: product.price.toString(),
         discountPrice: product.discountPrice?.toString() || '',
         description: product.description,
