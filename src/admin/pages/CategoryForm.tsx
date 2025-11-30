@@ -10,13 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { categoriesApi } from '../services/api';
 
-interface CategoryFormData {
-  name: string;
-  description: string;
-  order: string;
-  isActive: boolean;
-}
-
 const CategoryForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -24,7 +17,7 @@ const CategoryForm = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  const [formData, setFormData] = useState<Category>({
+  const [formData, setFormData] = useState<any>({
     name: '',
     description: '',
     order: '0',
