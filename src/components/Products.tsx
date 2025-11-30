@@ -1,9 +1,10 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import productsData from "@/data/products.json";
+import LoadingSpinner from "./LoadingSpinner";
 
 const Products = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -14,7 +15,21 @@ const Products = () => {
 
   const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.2], [0.8, 1]);
+  const API_URL = import.meta.env.VITE_API_URL;
+  const [products, setProducts] = useState<any[]>([]);
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      const data = await response.json();
+      setProducts(data.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
 
+  useEffect(() => {
+    fetchProducts();
+  }, []);
   return (
     <section id="products" ref={containerRef} className="py-24 relative overflow-hidden">
       {/* Background Elements */}
@@ -40,12 +55,13 @@ const Products = () => {
             Cutting-edge technology to protect your water tanks and save resources
           </p>
         </motion.div>
-
-        <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
-          {productsData.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
+        {products.length > 0 ?
+          <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
+            {products.map((product, index) => (
+              <ProductCard key={product._id} product={product} index={index} />
+            ))}
+          </div>
+          : (<div className="flex justify-center items-center"> <LoadingSpinner /></div>)}
 
         {/* More Products Button */}
         <div className="flex justify-center mt-12">
@@ -84,19 +100,19 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-2xl md:text-6xl">💧</div>
+          <img src={product.images[0]?.url} alt={product.name} />
         </div>
-        
+
         {/* Category Badge */}
         <div className="absolute top-1 left-1 md:top-4 md:left-4">
           <span className="px-1.5 py-0.5 md:px-3 md:py-1 bg-primary text-primary-foreground rounded-full text-[8px] md:text-xs font-semibold">
-            {product.category}
+            {product.category.name}
           </span>
         </div>
 
         {/* Hover Overlay - Hidden on mobile */}
         <div className="hidden md:flex absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 items-end justify-center pb-6">
-          <Link to={`/product/${product.id}`}>
+          <Link to={`/product/${product._id}`}>
             <Button className="bg-background text-foreground hover:bg-background/90">
               Quick View
             </Button>
@@ -121,16 +137,15 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`w-2 h-2 md:w-4 md:h-4 ${
-                  i < Math.floor(product.rating)
+                className={`w-2 h-2 md:w-4 md:h-4 ${i < Math.floor(product.rating || 4.9)
                     ? "fill-accent text-accent"
                     : "text-muted-foreground"
-                }`}
+                  }`}
               />
             ))}
           </div>
           <span className="hidden md:inline text-sm text-muted-foreground">
-            ({product.reviews} reviews)
+            ({product.reviews || 199} reviews)
           </span>
         </div>
 
@@ -142,7 +157,7 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
             </div>
             <div className="hidden md:block text-xs text-muted-foreground">Inclusive of all taxes</div>
           </div>
-          <Link to={`/product/${product.id}`}>
+          <Link to={`/product/${product._id}`}>
             <Button size="icon" className="bg-primary hover:bg-primary/90 rounded-full w-6 h-6 md:w-12 md:h-12">
               <ShoppingCart className="w-3 h-3 md:w-5 md:h-5" />
             </Button>

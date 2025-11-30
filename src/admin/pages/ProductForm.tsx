@@ -105,10 +105,10 @@ const ProductForm = () => {
       setIsFetching(true);
       const response = await productsApi.getById(productId);
       const product = response.data;
-
+      console.log(product)
       setFormData({
         name: product.name,
-        category: (product.category as any)._id,
+        category: (product.category as any)._id || product.category,
         price: product.price.toString(),
         discountPrice: product.discountPrice?.toString() || '',
         description: product.description,
@@ -152,7 +152,6 @@ const ProductForm = () => {
   const addFeature = () => {
     setFormData((prev) => ({ ...prev, features: [...prev.features, ''] }));
   };
-
   const removeFeature = (index: number) => {
     const newFeatures = formData.features.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, features: newFeatures }));
@@ -195,7 +194,6 @@ const ProductForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.name || !formData.category || !formData.price) {
       toast.error('Please fill in all required fields');
       return;
@@ -225,7 +223,7 @@ const ProductForm = () => {
 
       const filteredFeatures = formData.features.filter((f) => f.trim() !== '');
       formDataToSend.append('features', JSON.stringify(filteredFeatures));
-
+      
       const specs = {
         warranty: formData.warranty,
         power: formData.power,

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-const slides = [
+const MockSlidesData = [
   {
     id: 1,
     title: "Smart Water Tank Monitoring",
@@ -35,7 +35,22 @@ const slides = [
 ];
 
 const Hero = () => {
+  const [slides, setSlides] = useState(MockSlidesData);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const API_URL = import.meta.env.VITE_API_URL;
+  const fetchSlides = async () => {
+    try {
+      const response = await fetch(`${API_URL}/banners`);
+      const data = await response.json();
+      setSlides(data.data);
+    } catch (error) {
+      console.error('Error fetching slides:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSlides();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {

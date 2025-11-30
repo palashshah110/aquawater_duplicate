@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import productsData from "@/data/products.json";
+import { useEffect, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/navigation";
+import { Navigation } from "swiper/modules";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface Product {
   id: number;
@@ -27,9 +32,43 @@ interface Product {
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      const data = await response.json();
+      setProducts(data.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setLoading(false);  
+    }
+  };
 
-  const product = productsData.find((p) => p.id === Number(id)) as Product | undefined;
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
+  const [product, setProduct] = useState<any | undefined>(undefined);
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const fetchProductById = async (id: string) => {
+    const response = await fetch(`${API_URL}/products/${id}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data: any = await response.json() as Promise<Product>;
+    setProduct(data.data);
+  };
+  useEffect(() => {
+    fetchProductById(id);
+  }, [id]);
+  if(loading){
+    return (
+      <LoadingSpinner />
+    )
+  }
   if (!product) {
     return (
       <div className="min-h-screen bg-background">
@@ -50,12 +89,12 @@ const ProductDetail = () => {
   }
 
   const handleBuyNow = () => {
-    navigate(`/checkout/${product.id}`);
+    navigate(`/checkout/${product._id}`);
   };
 
   // Get related products (same category, excluding current)
-  const relatedProducts = productsData
-    .filter((p) => p.category === product.category && p.id !== product.id)
+  const relatedProducts = products
+    .filter((p) => p.category?.name === product.category?.name && p._id !== product._id)
     .slice(0, 3);
 
   return (
@@ -82,20 +121,38 @@ const ProductDetail = () => {
           {/* Product Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
             {/* Product Image */}
+
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
               className="relative"
             >
-              <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl overflow-hidden flex items-center justify-center">
-                <div className="text-[120px] md:text-[180px]">💧</div>
-              </div>
+
+              <Swiper
+                navigation={true}
+                modules={[Navigation]}
+                className="aspect-square rounded-2xl overflow-hidden"
+              >
+                {product.images.map((img: any, index: number) => (
+                  <SwiperSlide key={index}>
+                    <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                      <img
+                        src={img.url}
+                        alt={`${product.name}-${index}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+
               {/* Category Badge */}
-              <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
-                {product.category}
+              <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-10">
+                {product.category?.name}
               </Badge>
             </motion.div>
+
 
             {/* Product Info */}
             <motion.div
@@ -115,16 +172,15 @@ const ProductDetail = () => {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.rating)
+                      className={`w-5 h-5 ${i < Math.floor(product.rating || 4.9)
                           ? "fill-accent text-accent"
                           : "text-muted-foreground"
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
-                <span className="text-lg font-medium">{product.rating}</span>
-                <span className="text-muted-foreground">({product.reviews} reviews)</span>
+                <span className="text-lg font-medium">{product.rating || 4.9}</span>
+                <span className="text-muted-foreground">({product.reviews || 199} reviews)</span>
               </div>
 
               {/* Price */}
