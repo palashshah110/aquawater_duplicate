@@ -84,8 +84,20 @@ const Checkout = () => {
     pincode: "",
   });
 
-  const product = productsData.find((p) => p.id === Number(id)) as Product | undefined;
-
+   const API_URL = import.meta.env.VITE_API_URL;
+   const [product, setProduct] = useState<any | undefined>(undefined);
+  
+    const fetchProductById = async (id: string) => {
+      const response = await fetch(`${API_URL}/products/${id}`);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data: any = await response.json() as Promise<Product>;
+      setProduct(data.data);
+    };
+    useEffect(() => {
+      fetchProductById(id);
+    }, [id]);
   // const calculateShippingCharges = async (): Promise<void> => {
   //   if (!customerDetails.pincode || !product) {
   //     toast.error("Please enter pincode to calculate shipping");
@@ -549,10 +561,10 @@ const Checkout = () => {
                     <span className="text-4xl">💧</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold line-clamp-2">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                    <h3 className="font-semibold line-clamp-2">{product?.name}</h3>
+                    <p className="text-sm text-muted-foreground">{product?.category?.name}</p>
                     <p className="text-lg font-bold text-gradient mt-1">
-                      ₹{product.price.toLocaleString()}
+                      ₹{product?.price?.toLocaleString()}
                     </p>
                   </div>
                 </div>
