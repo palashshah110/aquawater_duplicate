@@ -111,7 +111,7 @@ const ProductForm = () => {
         category: (product.category as any)._id || product.category,
         price: product.price.toString(),
         discountPrice: product.discountPrice?.toString() || '',
-        description: product.description,
+        description: product.description || '',
         shortDescription: product.shortDescription || '',
         features: product.features.length > 0 ? product.features : [''],
         warranty: product.specs.warranty || '1 Year',
@@ -368,7 +368,7 @@ const ProductForm = () => {
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <Label htmlFor="description">Full Description *</Label>
                 <Textarea
                   id="description"
@@ -380,6 +380,7 @@ const ProductForm = () => {
                   className="mt-1"
                 />
               </div>
+            */}
             </motion.div>
 
             {/* Images */}

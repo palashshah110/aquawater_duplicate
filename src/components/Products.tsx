@@ -2,7 +2,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import productsData from "@/data/products.json";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -82,10 +82,15 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
     target: cardRef,
     offset: ["start end", "end start"],
   });
-
-  const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const navigate = useNavigate();
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
+  const isMobile = window.innerWidth <= 768;
 
+  const handleNavigate = (id: string) => {
+    if (isMobile) {
+      navigate(`/product/${id}`);
+    }
+  };
   return (
     <motion.div
       ref={cardRef}
@@ -95,7 +100,8 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay: index * 0.1 }}
       whileHover={{ y: -10 }}
-      className="group bg-card rounded-lg md:rounded-2xl overflow-hidden card-shadow border border-border/50 hover:border-primary/50 transition-all duration-300"
+      className="group bg-card rounded-lg md:rounded-2xl overflow-hidden card-shadow border border-border/50 hover:border-primary/50 transition-all duration-300 cursor-pointer"
+      onClick={() => handleNavigate(product._id)}
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">

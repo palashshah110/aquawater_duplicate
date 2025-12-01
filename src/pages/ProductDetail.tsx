@@ -186,9 +186,23 @@ const ProductDetail = () => {
               {/* Price */}
               <div className="bg-card rounded-xl p-6 border border-border">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-bold text-gradient">
-                    ₹{product.price.toLocaleString()}
-                  </span>
+                  {product.discountPrice ? (
+                    <>
+                      <span className="text-4xl font-bold text-gradient">
+                        ₹{product.discountPrice.toLocaleString()}
+                      </span>
+                      <span className="text-xl text-muted-foreground line-through">
+                        ₹{product.price.toLocaleString()}
+                      </span>
+                      <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+                        {Math.round(((product.price - product.discountPrice) / product.price) * 100)}% OFF
+                      </Badge>
+                    </>
+                  ) : (
+                    <span className="text-4xl font-bold text-gradient">
+                      ₹{product.price.toLocaleString()}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">Inclusive of all taxes</p>
               </div>
