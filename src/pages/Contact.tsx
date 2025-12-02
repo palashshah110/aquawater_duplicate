@@ -294,16 +294,6 @@ const Contact = () => {
                 </div>
               </div>
 
-              {/* Map Placeholder */}
-              <div className="bg-card rounded-xl overflow-hidden border border-border">
-                <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 text-primary mx-auto mb-2" />
-                    <p className="text-muted-foreground">Map Location</p>
-                    <p className="text-sm text-muted-foreground">Mumbai, Maharashtra</p>
-                  </div>
-                </div>
-              </div>
 
               {/* Quick Help */}
               <div className="bg-primary/5 rounded-xl p-6 border border-primary/20">

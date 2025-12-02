@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Eye, Filter, X, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,14 +22,25 @@ import {
 } from "@/components/ui/sheet";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import productsData from "@/data/products.json";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface Product {
-  id: number;
+  _id: string;
   name: string;
-  category: string;
+  category: {
+    _id: string;
+    name: string;
+    description: string;
+    isActive: boolean;
+    order: number;
+  };
   price: number;
-  image: string;
+  discountPrice?: number;
+  images: {
+    url: string;
+    publicId: string;
+    _id: string;
+  }[];
   rating: number;
   reviews: number;
   description: string;
@@ -38,55 +49,83 @@ interface Product {
     warranty: string;
     power: string;
     compatibility: string;
+    dimensions?: string;
+    weight?: string;
   };
+  stock: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  tags: string[];
+  slug: string;
 }
 
 const AllProducts = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 6000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [sortBy, setSortBy] = useState<string>("featured");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/products`);
+      const data = await response.json();
+      setProducts(data.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   // Get unique categories
   const categories = useMemo(() => {
-    const cats = [...new Set(productsData.map((p) => p.category))];
+    const cats = [...new Set(products.map((p) => p.category.name))];
     return cats;
-  }, []);
+  }, [products]);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    let products = [...productsData] as Product[];
+    let filtered = [...products];
 
     // Filter by category
     if (selectedCategories.length > 0) {
-      products = products.filter((p) => selectedCategories.includes(p.category));
+      filtered = filtered.filter((p) => selectedCategories.includes(p.category.name));
     }
 
     // Filter by price
-    products = products.filter(
+    filtered = filtered.filter(
       (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
     );
 
     // Sort
     switch (sortBy) {
       case "price-low":
-        products.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => a.price - b.price);
         break;
       case "price-high":
-        products.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => b.price - a.price);
         break;
       case "rating":
-        products.sort((a, b) => b.rating - a.rating);
+        filtered.sort((a, b) => b.rating - a.rating);
         break;
       case "reviews":
-        products.sort((a, b) => b.reviews - a.reviews);
+        filtered.sort((a, b) => b.reviews - a.reviews);
         break;
       default:
         break;
     }
 
-    return products;
-  }, [selectedCategories, priceRange, sortBy]);
+    return filtered;
+  }, [products, selectedCategories, priceRange, sortBy]);
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
@@ -98,7 +137,7 @@ const AllProducts = () => {
 
   const clearFilters = () => {
     setSelectedCategories([]);
-    setPriceRange([0, 6000]);
+    setPriceRange([0, 10000]);
     setSortBy("featured");
   };
 
@@ -129,18 +168,78 @@ const AllProducts = () => {
       {/* Price Range */}
       <div>
         <h3 className="font-semibold text-lg mb-4">Price Range</h3>
-        <div className="px-2">
-          <Slider
-            value={priceRange}
-            onValueChange={(value) => setPriceRange(value as [number, number])}
-            max={6000}
-            min={0}
-            step={100}
-            className="mb-4"
-          />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>₹{priceRange[0].toLocaleString()}</span>
-            <span>₹{priceRange[1].toLocaleString()}</span>
+        <div className="space-y-4">
+          {/* Min/Max Input Fields */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-muted-foreground mb-1 block">Min</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₹</span>
+                <input
+                  type="number"
+                  value={priceRange[0]}
+                  onChange={(e) => {
+                    const val = Math.min(Number(e.target.value), priceRange[1]);
+                    setPriceRange([val, priceRange[1]]);
+                  }}
+                  className="w-full pl-7 pr-2 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  min={0}
+                  max={priceRange[1]}
+                />
+              </div>
+            </div>
+            <div className="text-muted-foreground mt-5">—</div>
+            <div className="flex-1">
+              <label className="text-xs text-muted-foreground mb-1 block">Max</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₹</span>
+                <input
+                  type="number"
+                  value={priceRange[1]}
+                  onChange={(e) => {
+                    const val = Math.max(Number(e.target.value), priceRange[0]);
+                    setPriceRange([priceRange[0], val]);
+                  }}
+                  className="w-full pl-7 pr-2 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  min={priceRange[0]}
+                  max={10000}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Slider */}
+          <div className="px-1 pt-2">
+            <Slider
+              value={priceRange}
+              onValueChange={(value) => setPriceRange(value as [number, number])}
+              max={10000}
+              min={0}
+              step={100}
+              className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary [&_[role=slider]]:bg-background [&_[role=slider]]:shadow-md [&_[role=slider]]:transition-transform [&_[role=slider]]:hover:scale-110"
+            />
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            {[
+              { label: "Under ₹2K", range: [0, 2000] as [number, number] },
+              { label: "₹2K - ₹5K", range: [2000, 5000] as [number, number] },
+              { label: "₹5K - ₹8K", range: [5000, 8000] as [number, number] },
+              { label: "Above ₹8K", range: [8000, 10000] as [number, number] },
+            ].map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => setPriceRange(preset.range)}
+                className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
+                  priceRange[0] === preset.range[0] && priceRange[1] === preset.range[1]
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border hover:border-primary/50 hover:bg-primary/5"
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -265,10 +364,14 @@ const AllProducts = () => {
               )}
 
               {/* Products Grid */}
-              {filteredProducts.length > 0 ? (
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <LoadingSpinner />
+                </div>
+              ) : filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {filteredProducts.map((product, index) => (
-                    <ProductCard key={product.id} product={product} index={index} />
+                    <ProductCard key={product._id} product={product} index={index} />
                   ))}
                 </div>
               ) : (
@@ -301,18 +404,35 @@ const ProductCard = ({ product, index }: { product: Product; index: number }) =>
       className="group bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-lg"
     >
       {/* Product Image */}
-      <Link to={`/product/${product.id}`}>
+      <Link to={`/product/${product._id}`}>
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-4xl md:text-6xl">💧</div>
+            {product.images[0]?.url ? (
+              <img 
+                src={product.images[0].url} 
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-4xl md:text-6xl">💧</div>
+            )}
           </div>
 
           {/* Category Badge */}
           <div className="absolute top-2 left-2 md:top-4 md:left-4">
             <span className="px-2 py-1 md:px-3 md:py-1 bg-primary text-primary-foreground rounded-full text-[10px] md:text-xs font-semibold">
-              {product.category}
+              {product.category.name}
             </span>
           </div>
+
+          {/* Discount Badge */}
+          {product.discountPrice && product.discountPrice < product.price && (
+            <div className="absolute top-2 right-2 md:top-4 md:right-4">
+              <span className="px-2 py-1 md:px-3 md:py-1 bg-green-500 text-white rounded-full text-[10px] md:text-xs font-semibold">
+                {Math.round(((product.price - product.discountPrice) / product.price) * 100)}% OFF
+              </span>
+            </div>
+          )}
 
           {/* Hover Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
@@ -325,7 +445,7 @@ const ProductCard = ({ product, index }: { product: Product; index: number }) =>
 
       {/* Product Info */}
       <div className="p-3 md:p-5 space-y-2 md:space-y-3">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product._id}`}>
           <h3 className="text-sm md:text-lg font-bold group-hover:text-primary transition-colors line-clamp-2">
             {product.name}
           </h3>
@@ -342,7 +462,7 @@ const ProductCard = ({ product, index }: { product: Product; index: number }) =>
               <Star
                 key={i}
                 className={`w-3 h-3 md:w-4 md:h-4 ${
-                  i < Math.floor(product.rating)
+                  i < Math.floor(product.rating || 5)
                     ? "fill-accent text-accent"
                     : "text-muted-foreground"
                 }`}
@@ -350,19 +470,32 @@ const ProductCard = ({ product, index }: { product: Product; index: number }) =>
             ))}
           </div>
           <span className="text-xs md:text-sm text-muted-foreground">
-            ({product.reviews})
+            ({product.reviews || 0})
           </span>
         </div>
 
         {/* Price & CTA */}
         <div className="flex items-center justify-between pt-2 md:pt-3 border-t border-border">
           <div>
-            <div className="text-lg md:text-xl font-bold text-gradient">
-              ₹{product.price.toLocaleString()}
-            </div>
-            <div className="text-[10px] md:text-xs text-muted-foreground">Incl. taxes</div>
+            {product.discountPrice && product.discountPrice < product.price ? (
+              <>
+                <div className="text-lg md:text-xl font-bold text-gradient">
+                  ₹{product.discountPrice.toLocaleString()}
+                </div>
+                <div className="text-[10px] md:text-xs text-muted-foreground line-through">
+                  ₹{product.price.toLocaleString()}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-lg md:text-xl font-bold text-gradient">
+                  ₹{product.price.toLocaleString()}
+                </div>
+                <div className="text-[10px] md:text-xs text-muted-foreground">Incl. taxes</div>
+              </>
+            )}
           </div>
-          <Link to={`/product/${product.id}`}>
+          <Link to={`/product/${product._id}`}>
             <Button size="sm" className="bg-primary hover:bg-primary/90">
               <Eye className="w-4 h-4 mr-1" />
               <span className="hidden sm:inline">View</span>
