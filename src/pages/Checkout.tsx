@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import productsData from "@/data/products.json";
-import axios from "axios";
 
 declare global {
   interface Window {
@@ -253,7 +250,7 @@ const Checkout = () => {
   };
 
   const getTotalAmount = (): number => {
-    const productPrice = product.price;
+    const productPrice = product?.discountPrice || product?.price || 0;
     const shippingPrice = selectedShipping?.rate || 0;
     return productPrice + shippingPrice;
   };
@@ -280,30 +277,91 @@ const Checkout = () => {
         return;
       }
 
-      const totalAmount = getTotalAmount();
+      // Step 1: Create Razorpay order from backend
+      const createOrderResponse = await fetch(`${API_URL}/orders/create-razorpay-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: id,
+          quantity: 1,
+          shippingCharge: selectedShipping.rate,
+        }),
+      });
 
+      const createOrderData = await createOrderResponse.json();
+
+      if (!createOrderData.success) {
+        toast.error(createOrderData.message || "Failed to create order");
+        setIsLoading(false);
+        return;
+      }
+
+      const { razorpayOrderId, amount } = createOrderData.data;
+
+      // Step 2: Open Razorpay checkout with order_id from backend
       const options = {
-        key: "rzp_test_RdgiS64CnkNCDH", // Replace with your Razorpay Key ID
-        amount: totalAmount * 100, // Amount in paise
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_RdgiS64CnkNCDH",
+        amount: amount,
         currency: "INR",
         name: "ShreeFlow",
         description: product.name,
         image: "/logo.png",
-        handler: function (response: any) {
-          // Payment successful
-          toast.success("Payment Successful!");
-          console.log("Payment ID:", response.razorpay_payment_id);
+        order_id: razorpayOrderId,
+        handler: async function (response: any) {
+          // Step 3: Verify payment and create order in DB
+          try {
+            const verifyResponse = await fetch(`${API_URL}/orders/verify-payment`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                productId: id,
+                quantity: 1,
+                customer: {
+                  name: customerDetails.name,
+                  email: customerDetails.email,
+                  phone: customerDetails.phone,
+                },
+                shippingAddress: {
+                  address: customerDetails.address,
+                  city: customerDetails.city,
+                  state: customerDetails.state,
+                  pincode: customerDetails.pincode,
+                },
+                shippingCharge: selectedShipping.rate,
+                courierName: selectedShipping.courier_name,
+              }),
+            });
 
-          // Navigate to success page or show confirmation
-          navigate("/order-success", {
-            state: {
-              paymentId: response.razorpay_payment_id,
-              product: product,
-              customer: customerDetails,
-              shipping: selectedShipping,
-              totalAmount: totalAmount,
-            },
-          });
+            const verifyData = await verifyResponse.json();
+
+            if (verifyData.success) {
+              toast.success("Payment Successful! Order placed.");
+              navigate("/order-success", {
+                state: {
+                  order: verifyData.data,
+                  paymentId: response.razorpay_payment_id,
+                  product: product,
+                  customer: customerDetails,
+                  shipping: selectedShipping,
+                  totalAmount: getTotalAmount(),
+                },
+              });
+            } else {
+              toast.error(verifyData.message || "Payment verification failed");
+              setIsLoading(false);
+            }
+          } catch (error) {
+            console.error("Verification error:", error);
+            toast.error("Payment verification failed. Please contact support.");
+            setIsLoading(false);
+          }
         },
         prefill: {
           name: customerDetails.name,
@@ -312,7 +370,7 @@ const Checkout = () => {
         },
         notes: {
           address: `${customerDetails.address}, ${customerDetails.city}, ${customerDetails.state} - ${customerDetails.pincode}`,
-          product_id: product.id,
+          product_id: id,
           product_name: product.name,
           shipping_courier: selectedShipping.courier_name,
           shipping_charges: selectedShipping.rate,
@@ -558,13 +616,13 @@ const Checkout = () => {
                 {/* Product Info */}
                 <div className="flex gap-4">
                   <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-4xl">💧</span>
+                    <img src={product?.images?.[0]?.url} alt={product?.name} className="w-full h-full object-cover rounded-lg" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold line-clamp-2">{product?.name}</h3>
                     <p className="text-sm text-muted-foreground">{product?.category?.name}</p>
                     <p className="text-lg font-bold text-gradient mt-1">
-                      ₹{product?.price?.toLocaleString()}
+                      ₹{(product?.discountPrice || product?.price)?.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -573,7 +631,7 @@ const Checkout = () => {
                 <div className="space-y-3 pt-4 border-t border-border">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>₹{product.price.toLocaleString()}</span>
+                    <span>₹{(product?.discountPrice || product?.price)?.toLocaleString()}</span>
                   </div>
                   
                   {/* Shipping Charges */}
@@ -598,7 +656,7 @@ const Checkout = () => {
                   <div className="flex justify-between pt-3 border-t border-border">
                     <span className="text-lg font-bold">Total</span>
                     <span className="text-2xl font-bold text-gradient">
-                      ₹{getTotalAmount().toLocaleString()}
+                      ₹{(getTotalAmount() || 0)?.toLocaleString()}
                     </span>
                   </div>
                 </div>

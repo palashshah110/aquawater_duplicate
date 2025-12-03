@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, X, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,8 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { productsApi } from '../services/api';
+import { productsApi, categoriesApi } from '../services/api';
 
 const defaultCategories = [
   'Overflow Protection',
@@ -82,6 +90,12 @@ const ProductForm = () => {
     tags: [],
   });
 
+  // New category dialog state
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+
   useEffect(() => {
     fetchCategories();
     if (isEditing && id) {
@@ -97,6 +111,39 @@ const ProductForm = () => {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    setCreatingCategory(true);
+    try {
+      const response = await categoriesApi.create({
+        name: newCategoryName.trim(),
+        description: newCategoryDescription.trim(),
+        isActive: true,
+        order: categories.length,
+      } as any);
+
+      // Add new category to list and select it
+      const newCategory = response.data;
+      setCategories((prev: any) => [...prev, newCategory]);
+      setFormData((prev) => ({ ...prev, category: newCategory._id }));
+
+      // Reset and close dialog
+      setNewCategoryName('');
+      setNewCategoryDescription('');
+      setShowNewCategoryDialog(false);
+      toast.success('Category created successfully');
+    } catch (error: any) {
+      console.error('Error creating category:', error);
+      toast.error(error.message || 'Failed to create category');
+    } finally {
+      setCreatingCategory(false);
     }
   };
 
@@ -325,23 +372,34 @@ const ProductForm = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="category">Category *</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, category: value }))
-                    }
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat:any) => (
-                        <SelectItem key={cat._id} value={cat._id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2 mt-1">
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, category: value }))
+                      }
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat:any) => (
+                          <SelectItem key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowNewCategoryDialog(true)}
+                      title="Add new category"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="sku">SKU</Label>
@@ -713,6 +771,69 @@ const ProductForm = () => {
           </div>
         </div>
       </form>
+
+      {/* New Category Dialog */}
+      <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Category</DialogTitle>
+            <DialogDescription>
+              Add a new category for your products.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="newCategoryName">Category Name *</Label>
+              <Input
+                id="newCategoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Enter category name"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newCategoryDescription">Description (Optional)</Label>
+              <Textarea
+                id="newCategoryDescription"
+                value={newCategoryDescription}
+                onChange={(e) => setNewCategoryDescription(e.target.value)}
+                placeholder="Brief description of the category"
+                rows={3}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowNewCategoryDialog(false);
+                setNewCategoryName('');
+                setNewCategoryDescription('');
+              }}
+              disabled={creatingCategory}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateCategory}
+              disabled={creatingCategory || !newCategoryName.trim()}
+            >
+              {creatingCategory ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Category'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

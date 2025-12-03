@@ -20,6 +20,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 interface OrderState {
+  order?: {
+    _id: string;
+    orderId: string;
+    orderStatus: string;
+    createdAt: string;
+  };
   paymentId: string;
   product: {
     _id: string;
@@ -64,11 +70,12 @@ const OrderSuccess = () => {
     return <Navigate to="/" replace />;
   }
 
-  const { paymentId, product, customer, shipping, totalAmount } = state;
+  const { order, paymentId, product, customer, shipping, totalAmount } = state;
 
-  const copyPaymentId = () => {
-    navigator.clipboard.writeText(paymentId);
-    toast.success("Payment ID copied to clipboard!");
+  const copyOrderId = () => {
+    const idToCopy = order?.orderId || paymentId;
+    navigator.clipboard.writeText(idToCopy);
+    toast.success("Order ID copied to clipboard!");
   };
 
   const getOrderDate = () => {
@@ -157,14 +164,14 @@ const OrderSuccess = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Payment ID</p>
-                    <p className="font-mono text-sm font-medium">{paymentId}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Order ID</p>
+                    <p className="font-mono text-sm font-medium">{order?.orderId || paymentId}</p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8"
-                    onClick={copyPaymentId}
+                    onClick={copyOrderId}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>

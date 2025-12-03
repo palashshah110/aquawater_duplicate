@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   Image,
   FolderOpen,
+  FileText,
   LogOut,
   Menu,
   X,
@@ -20,6 +21,7 @@ const menuItems = [
   { icon: Package, label: 'Products', path: '/admin/products' },
   { icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
   { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
+  { icon: FileText, label: 'Articles', path: '/admin/articles' },
   { icon: Image, label: 'Banners', path: '/admin/banners' },
 ];
 

@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import productsData from "@/data/products.json";
 import LoadingSpinner from "./LoadingSpinner";
 
 const Products = () => {

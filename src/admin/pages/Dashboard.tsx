@@ -42,27 +42,6 @@ const categoryColors: Record<string, string> = {
   'IoT Solutions': '#FF9800',
 };
 
-// Mock chart data (would need backend endpoints for real data)
-const revenueData = [
-  { month: 'Jan', revenue: 45000 },
-  { month: 'Feb', revenue: 52000 },
-  { month: 'Mar', revenue: 48000 },
-  { month: 'Apr', revenue: 61000 },
-  { month: 'May', revenue: 55000 },
-  { month: 'Jun', revenue: 67000 },
-  { month: 'Jul', revenue: 72000 },
-];
-
-const ordersChartData = [
-  { day: 'Mon', orders: 12 },
-  { day: 'Tue', orders: 19 },
-  { day: 'Wed', orders: 15 },
-  { day: 'Thu', orders: 22 },
-  { day: 'Fri', orders: 28 },
-  { day: 'Sat', orders: 35 },
-  { day: 'Sun', orders: 18 },
-];
-
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -73,6 +52,8 @@ const Dashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [categoryData, setCategoryData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [revenueData, setRevenueData] = useState<{ month: string; revenue: number }[]>([]);
+  const [ordersChartData, setOrdersChartData] = useState<{ day: string; orders: number }[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -82,14 +63,14 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch order stats
-      const orderStatsRes = await ordersApi.getStats();
-
-      // Fetch products for count and categories
-      const productsRes = await productsApi.getAll({ limit: 100 });
-
-      // Fetch recent orders
-      const ordersRes = await ordersApi.getAll({ limit: 5 });
+      // Fetch all data in parallel
+      const [orderStatsRes, productsRes, ordersRes, revenueChartRes, weeklyOrdersRes] = await Promise.all([
+        ordersApi.getStats(),
+        productsApi.getAll({ limit: 100 }),
+        ordersApi.getAll({ limit: 5 }),
+        ordersApi.getRevenueChartData(),
+        ordersApi.getWeeklyOrdersChartData(),
+      ]);
 
       // Calculate category distribution
       const categoryCount: Record<string, number> = {};
@@ -112,25 +93,17 @@ const Dashboard = () => {
       });
 
       setRecentOrders(ordersRes.data);
+      setRevenueData(revenueChartRes.data);
+      setOrdersChartData(weeklyOrdersRes.data);
       setCategoryData(
         categoryDistribution.length > 0
           ? categoryDistribution
           : [
-              { name: 'Overflow Protection', value: 35, color: '#0070D0' },
-              { name: 'Auto Cut-Off', value: 30, color: '#00BCD4' },
-              { name: 'Sensors', value: 20, color: '#4CAF50' },
-              { name: 'IoT Solutions', value: 15, color: '#FF9800' },
+              { name: 'No products', value: 100, color: '#888888' },
             ]
       );
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      // Use fallback mock data if API fails
-      setCategoryData([
-        { name: 'Overflow Protection', value: 35, color: '#0070D0' },
-        { name: 'Auto Cut-Off', value: 30, color: '#00BCD4' },
-        { name: 'Sensors', value: 20, color: '#4CAF50' },
-        { name: 'IoT Solutions', value: 15, color: '#FF9800' },
-      ]);
     } finally {
       setLoading(false);
     }

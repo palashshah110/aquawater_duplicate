@@ -290,6 +290,14 @@ export const ordersApi = {
     return fetchApi<OrderStats>('/orders/stats');
   },
 
+  getRevenueChartData: () => {
+    return fetchApi<{ success: boolean; data: { month: string; revenue: number }[] }>('/orders/chart/revenue');
+  },
+
+  getWeeklyOrdersChartData: () => {
+    return fetchApi<{ success: boolean; data: { day: string; orders: number }[] }>('/orders/chart/weekly');
+  },
+
   updateStatus: (id: string, data: { orderStatus: string; trackingNumber?: string }) => {
     return fetchApi<{ success: boolean; message: string; data: Order }>(
       `/orders/${id}/status`,
@@ -425,9 +433,135 @@ export const categoriesApi = {
   },
 };
 
+// Article Types
+export interface Article {
+  _id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  content: string;
+  featuredImage?: {
+    url: string;
+    publicId: string;
+  };
+  category: string;
+  tags: string[];
+  author: {
+    name: string;
+    avatar?: string;
+  };
+  isPublished: boolean;
+  isFeatured: boolean;
+  views: number;
+  readTime: number;
+  publishedAt?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArticlesResponse {
+  success: boolean;
+  data: Article[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// ============ ARTICLES API ============
+export const articlesApi = {
+  // Public endpoints
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    tag?: string;
+    featured?: boolean;
+    search?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+    }
+    const query = searchParams.toString();
+    return fetchApi<ArticlesResponse>(`/articles${query ? `?${query}` : ''}`);
+  },
+
+  getCategories: () => {
+    return fetchApi<{ success: boolean; data: string[] }>('/articles/categories');
+  },
+
+  getTags: () => {
+    return fetchApi<{ success: boolean; data: { name: string; count: number }[] }>('/articles/tags');
+  },
+
+  getRelated: (id: string) => {
+    return fetchApi<{ success: boolean; data: Article[] }>(`/articles/${id}/related`);
+  },
+
+  // Admin endpoints
+  getAllAdmin: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    category?: string;
+    search?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+    }
+    const query = searchParams.toString();
+    return fetchApi<ArticlesResponse>(`/articles/admin/all${query ? `?${query}` : ''}`);
+  },
+
+  getById: (id: string) => {
+    return fetchApi<{ success: boolean; data: Article }>(`/articles/${id}`);
+  },
+
+  create: (formData: FormData) => {
+    return fetchApi<{ success: boolean; message: string; data: Article }>(
+      '/articles',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+  },
+
+  update: (id: string, formData: FormData) => {
+    return fetchApi<{ success: boolean; message: string; data: Article }>(
+      `/articles/${id}`,
+      {
+        method: 'PUT',
+        body: formData,
+      }
+    );
+  },
+
+  delete: (id: string) => {
+    return fetchApi<{ success: boolean; message: string }>(`/articles/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default {
   products: productsApi,
   orders: ordersApi,
   banners: bannersApi,
   categories: categoriesApi,
+  articles: articlesApi,
 };

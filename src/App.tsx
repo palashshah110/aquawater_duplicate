@@ -26,6 +26,12 @@ import Banners from "./admin/pages/Banners";
 import BannerForm from "./admin/pages/BannerForm";
 import Categories from "./admin/pages/Categories";
 import CategoryForm from "./admin/pages/CategoryForm";
+import Articles from "./admin/pages/Articles";
+import ArticleForm from "./admin/pages/ArticleForm";
+
+// Public Article pages
+import ArticlesList from "./pages/ArticlesList";
+import ArticleDetail from "./pages/ArticleDetail";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +52,8 @@ const App = () => (
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/features" element={<Features showHeader={true} />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/articles" element={<ArticlesList />} />
+            <Route path="/articles/:_id" element={<ArticleDetail />} />
 
             {/* Admin Routes */}
             <Route path="/admin/login" element={<Login />} />
@@ -65,6 +73,9 @@ const App = () => (
               <Route path="categories/new" element={<CategoryForm />} />
               <Route path="categories/edit/:id" element={<CategoryForm />} />
               <Route path="orders" element={<Orders />} />
+              <Route path="articles" element={<Articles />} />
+              <Route path="articles/new" element={<ArticleForm />} />
+              <Route path="articles/edit/:id" element={<ArticleForm />} />
               <Route path="banners" element={<Banners />} />
               <Route path="banners/new" element={<BannerForm />} />
               <Route path="banners/edit/:id" element={<BannerForm />} />
