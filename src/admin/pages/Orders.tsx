@@ -288,9 +288,8 @@ const Orders = () => {
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <span
-                                className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                                  statusColors[order.orderStatus]
-                                }`}
+                                className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[order.orderStatus]
+                                  }`}
                               >
                                 {order.orderStatus}
                               </span>
@@ -349,140 +348,146 @@ const Orders = () => {
 
       {/* View Order Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Order Details - {selectedOrder?.orderId}</DialogTitle>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-6">
-              {/* Customer Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Customer Information</h4>
-                  <p>{selectedOrder.customer.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedOrder.customer.email}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedOrder.customer.phone}
-                  </p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Shipping Address</h4>
-                  <p>{selectedOrder.shippingAddress.address}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedOrder.shippingAddress.city},{' '}
-                    {selectedOrder.shippingAddress.state}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedOrder.shippingAddress.pincode}
-                  </p>
-                </div>
-              </div>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
 
-              {/* Product Info */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">Product</h4>
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center overflow-hidden">
-                    {selectedOrder.product.image ? (
-                      <img
-                        src={selectedOrder.product.image}
-                        alt={selectedOrder.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl">💧</span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{selectedOrder.product.name}</p>
+          {/* Fixed Header */}
+          <DialogHeader className="shrink-0">
+            <DialogTitle>
+              Order Details - {selectedOrder?.orderId}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto pr-2">
+            {selectedOrder && (
+              <div className="space-y-6">
+                {/* Customer Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">Customer Information</h4>
+                    <p>{selectedOrder.customer.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      Quantity: {selectedOrder.product.quantity}
+                      {selectedOrder.customer.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOrder.customer.phone}
                     </p>
                   </div>
-                  <p className="font-bold">
-                    ₹{selectedOrder.product.price.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Payment Info */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">Payment Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Method</p>
-                    <p className="font-medium capitalize">{selectedOrder.payment.method}</p>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">Shipping Address</h4>
+                    <p>{selectedOrder.shippingAddress.address}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOrder.shippingAddress.city},{' '}
+                      {selectedOrder.shippingAddress.state}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOrder.shippingAddress.pincode}
+                    </p>
                   </div>
+                </div>
+
+                {/* Product Info */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Product</h4>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center overflow-hidden">
+                      {selectedOrder.product.image ? (
+                        <img
+                          src={selectedOrder.product.image}
+                          alt={selectedOrder.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xl">💧</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{selectedOrder.product.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Quantity: {selectedOrder.product.quantity}
+                      </p>
+                    </div>
+                    <p className="font-bold">
+                      ₹{selectedOrder.product.price.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Payment Info */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Payment Information</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Method</p>
+                      <p className="font-medium capitalize">{selectedOrder.payment.method}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Status</p>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${paymentStatusColors[selectedOrder.payment.status]
+                          }`}
+                      >
+                        {selectedOrder.payment.status}
+                      </span>
+                    </div>
+                    {selectedOrder.payment.razorpayPaymentId && (
+                      <div className="col-span-2">
+                        <p className="text-muted-foreground">Payment ID</p>
+                        <p className="font-mono text-xs">{selectedOrder.payment.razorpayPaymentId}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Order Summary */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Order Summary</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>₹{selectedOrder.subtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span>₹{selectedOrder.shippingCharge.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span>₹{selectedOrder.tax.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-border font-bold">
+                      <span>Total</span>
+                      <span>₹{selectedOrder.totalAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status & Tracking */}
+                <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
                   <div>
-                    <p className="text-muted-foreground">Status</p>
+                    <p className="text-sm text-muted-foreground">Order Status</p>
                     <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                        paymentStatusColors[selectedOrder.payment.status]
-                      }`}
+                      className={`inline-block px-3 py-1 rounded-full text-sm font-medium capitalize ${statusColors[selectedOrder.orderStatus]
+                        }`}
                     >
-                      {selectedOrder.payment.status}
+                      {selectedOrder.orderStatus}
                     </span>
                   </div>
-                  {selectedOrder.payment.razorpayPaymentId && (
-                    <div className="col-span-2">
-                      <p className="text-muted-foreground">Payment ID</p>
-                      <p className="font-mono text-xs">{selectedOrder.payment.razorpayPaymentId}</p>
+                  {selectedOrder.trackingNumber && (
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Tracking Number</p>
+                      <p className="font-mono">{selectedOrder.trackingNumber}</p>
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Order Summary */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">Order Summary</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>₹{selectedOrder.subtotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span>₹{selectedOrder.shippingCharge.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span>₹{selectedOrder.tax.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-border font-bold">
-                    <span>Total</span>
-                    <span>₹{selectedOrder.totalAmount.toLocaleString()}</span>
-                  </div>
-                </div>
+                {/* Order Date */}
+                <p className="text-sm text-muted-foreground text-center">
+                  Order placed on {formatDate(selectedOrder.createdAt)}
+                </p>
               </div>
-
-              {/* Status & Tracking */}
-              <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
-                <div>
-                  <p className="text-sm text-muted-foreground">Order Status</p>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-medium capitalize ${
-                      statusColors[selectedOrder.orderStatus]
-                    }`}
-                  >
-                    {selectedOrder.orderStatus}
-                  </span>
-                </div>
-                {selectedOrder.trackingNumber && (
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Tracking Number</p>
-                    <p className="font-mono">{selectedOrder.trackingNumber}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Order Date */}
-              <p className="text-sm text-muted-foreground text-center">
-                Order placed on {formatDate(selectedOrder.createdAt)}
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
