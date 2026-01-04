@@ -75,7 +75,7 @@ const Products = () => {
   );
 };
 
-const ProductCard = ({ product, index }: { product: any; index: number }) => {
+export const ProductCard = ({ product, index }: { product: any; index: number }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: cardRef,
@@ -83,12 +83,9 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
   });
   const navigate = useNavigate();
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
-  const isMobile = window.innerWidth <= 768;
 
   const handleNavigate = (id: string) => {
-    if (isMobile) {
       navigate(`/product/${id}`);
-    }
   };
   return (
     <motion.div

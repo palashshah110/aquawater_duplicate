@@ -82,8 +82,12 @@ const Hero = () => {
           {/* Background Image */}
           <div 
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
-          >
+            style={{
+              backgroundImage: slides[currentSlide]?.image
+                ? `url(${slides[currentSlide].image})`
+                : "none",
+            }}
+                    >
             <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/20" />
           </div>
 
@@ -101,7 +105,7 @@ const Hero = () => {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="inline-block px-4 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-semibold"
               >
-                {slides[currentSlide].badge}
+                {slides[currentSlide]?.badge || ''}
               </motion.span>
               
               <motion.h1 
@@ -110,7 +114,7 @@ const Hero = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground"
               >
-                {slides[currentSlide].title}
+                {slides[currentSlide]?.title || ''}
               </motion.h1>
 
               <motion.h2
@@ -119,7 +123,7 @@ const Hero = () => {
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="text-2xl md:text-3xl font-semibold text-primary"
               >
-                {slides[currentSlide].subtitle}
+                {slides[currentSlide]?.subtitle || ''}
               </motion.h2>
 
               <motion.p 
@@ -128,7 +132,7 @@ const Hero = () => {
                 transition={{ duration: 0.5, delay: 0.6 }}
                 className="text-lg md:text-xl text-muted-foreground"
               >
-                {slides[currentSlide].description}
+                {slides[currentSlide]?.description || ''}
               </motion.p>
 
               <motion.div
@@ -139,7 +143,7 @@ const Hero = () => {
               >
                 <Link to="/products">
                   <Button size="lg" className="h-12 px-8 group">
-                    {slides[currentSlide].buttonText}
+                    {slides[currentSlide]?.buttonText || ''}
                     <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>

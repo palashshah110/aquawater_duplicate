@@ -23,6 +23,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { ProductCard } from "@/components/Products";
 
 interface Product {
   _id: string;
@@ -391,119 +392,6 @@ const AllProducts = () => {
 
       <Footer />
     </div>
-  );
-};
-
-const ProductCard = ({ product, index }: { product: Product; index: number }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      whileHover={{ y: -5 }}
-      className="group bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-lg"
-    >
-      {/* Product Image */}
-      <Link to={`/product/${product._id}`}>
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
-          <div className="absolute inset-0 flex items-center justify-center">
-            {product.images[0]?.url ? (
-              <img 
-                src={product.images[0].url} 
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="text-4xl md:text-6xl">💧</div>
-            )}
-          </div>
-
-          {/* Category Badge */}
-          <div className="absolute top-2 left-2 md:top-4 md:left-4">
-            <span className="px-2 py-1 md:px-3 md:py-1 bg-primary text-primary-foreground rounded-full text-[10px] md:text-xs font-semibold">
-              {product.category.name}
-            </span>
-          </div>
-
-          {/* Discount Badge */}
-          {product.discountPrice && product.discountPrice < product.price && (
-            <div className="absolute top-2 right-2 md:top-4 md:right-4">
-              <span className="px-2 py-1 md:px-3 md:py-1 bg-green-500 text-white rounded-full text-[10px] md:text-xs font-semibold">
-                {Math.round(((product.price - product.discountPrice) / product.price) * 100)}% OFF
-              </span>
-            </div>
-          )}
-
-          {/* Hover Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-            <Button className="bg-background text-foreground hover:bg-background/90">
-              View Details
-            </Button>
-          </div>
-        </div>
-      </Link>
-
-      {/* Product Info */}
-      <div className="p-3 md:p-5 space-y-2 md:space-y-3">
-        <Link to={`/product/${product._id}`}>
-          <h3 className="text-sm md:text-lg font-bold group-hover:text-primary transition-colors line-clamp-2">
-            {product.name}
-          </h3>
-        </Link>
-
-        <p className="hidden md:block text-sm text-muted-foreground line-clamp-2">
-          {product.description}
-        </p>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1 md:gap-2">
-          <div className="flex items-center gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-3 h-3 md:w-4 md:h-4 ${
-                  i < Math.floor(product.rating || 5)
-                    ? "fill-accent text-accent"
-                    : "text-muted-foreground"
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs md:text-sm text-muted-foreground">
-            ({product.reviews || 0})
-          </span>
-        </div>
-
-        {/* Price & CTA */}
-        <div className="flex items-center justify-between pt-2 md:pt-3 border-t border-border">
-          <div>
-            {product.discountPrice && product.discountPrice < product.price ? (
-              <>
-                <div className="text-lg md:text-xl font-bold text-gradient">
-                  ₹{product.discountPrice.toLocaleString()}
-                </div>
-                <div className="text-[10px] md:text-xs text-muted-foreground line-through">
-                  ₹{product.price.toLocaleString()}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-lg md:text-xl font-bold text-gradient">
-                  ₹{product.price.toLocaleString()}
-                </div>
-                <div className="text-[10px] md:text-xs text-muted-foreground">Incl. taxes</div>
-              </>
-            )}
-          </div>
-          <Link to={`/product/${product._id}`}>
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
-              <Eye className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">View</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </motion.div>
   );
 };
 
