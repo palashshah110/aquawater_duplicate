@@ -152,7 +152,6 @@ const ProductForm = () => {
       setIsFetching(true);
       const response = await productsApi.getById(productId);
       const product = response.data;
-      console.log(product)
       setFormData({
         name: product.name,
         category: (product.category as any)._id || product.category,
@@ -252,6 +251,9 @@ const ProductForm = () => {
       return;
     }
 
+    if(Number(formData.stock) < 0) {
+      setFormData((prev) => ({ ...prev, stock: '0' }));
+    }
     setIsLoading(true);
 
     try {
