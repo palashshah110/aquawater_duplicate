@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 
 const MockSlidesData = [
@@ -34,10 +34,14 @@ const MockSlidesData = [
   }
 ];
 
+const SLIDE_INTERVAL = 2500;
+
 const Hero = () => {
   const [slides, setSlides] = useState(MockSlidesData);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const API_URL = import.meta.env.VITE_API_URL;
+
   const fetchSlides = async () => {
     try {
       const response = await fetch(`${API_URL}/banners`);
@@ -48,24 +52,41 @@ const Hero = () => {
     }
   };
 
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    timerRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, SLIDE_INTERVAL);
+  }, [slides.length]);
+
   useEffect(() => {
     fetchSlides();
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 2500);
+    resetTimer();
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [resetTimer]);
 
-    return () => clearInterval(timer);
-  }, []);
-
-  const nextSlide = () => { 
+  const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
+    resetTimer();
   };
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    resetTimer();
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+    resetTimer();
   };
 
   return (
@@ -147,11 +168,6 @@ const Hero = () => {
                     <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <a href="#features">
-                  <Button size="lg" variant="outline" className="h-12 px-8">
-                    Learn More
-                  </Button>
-                </a>
               </motion.div>
             </motion.div>
           </div>
@@ -179,10 +195,10 @@ const Hero = () => {
         {slides.map((_, index) => (
           <button
             key={index}
-            onClick={() => setCurrentSlide(index)}
+            onClick={() => goToSlide(index)}
             className={`h-2 rounded-full transition-all ${
-              currentSlide === index 
-                ? "w-8 bg-primary" 
+              currentSlide === index
+                ? "w-8 bg-primary"
                 : "w-2 bg-background/60 hover:bg-background/80"
             }`}
             aria-label={`Go to slide ${index + 1}`}

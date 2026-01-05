@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Eye, Filter, X, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -67,14 +67,22 @@ const AllProducts = () => {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [searchParams] = useSearchParams();
   const API_URL = import.meta.env.VITE_API_URL;
+
+  // Handle category from URL query param
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category) {
+      setSelectedCategories([category]);
+    }
+  }, [searchParams]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/products`);
-      const data = await response.json();
+    const data = await response.json();
       setProducts(data.data);
     } catch (error) {
       console.error('Error fetching products:', error);

@@ -77,18 +77,37 @@ const Contact = () => {
 
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-    toast.success("Message sent successfully! We'll get back to you soon.");
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      subject: "",
-      message: "",
-    });
-    setIsSubmitting(false);
+      const response = await fetch(`${API_URL}/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send message');
+      }
+
+      toast.success(data.message || "Message sent successfully! We'll get back to you soon.");
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error('Contact form error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to send message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactInfo = [
@@ -272,7 +291,7 @@ const Contact = () => {
                   {contactInfo.map((info, index) => (
                     <motion.a
                       key={info.title}
-                      href={info.action}
+                      href={'#'}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 + index * 0.1 }}
@@ -306,11 +325,6 @@ const Contact = () => {
                     <Button variant="outline" size="sm">
                       <Phone className="w-4 h-4 mr-2" />
                       Call Now
-                    </Button>
-                  </a>
-                  <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer">
-                    <Button size="sm">
-                      WhatsApp
                     </Button>
                   </a>
                 </div>

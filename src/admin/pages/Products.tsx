@@ -58,10 +58,10 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const params: any = { limit: 100 };
+      const params: any = { limit: 100, admin: 'admin' };
       if (search) params.search = search;
       if (categoryFilter !== 'all') params.category = categoryFilter;
-
+      
       const response = await productsApi.getAll(params);
       setProducts(response.data);
     } catch (error) {

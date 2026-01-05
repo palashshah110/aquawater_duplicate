@@ -1,7 +1,34 @@
 import { motion } from "framer-motion";
 import { Droplets, Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
 import logo from '../assets/logo.png';
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Category, Product, productsApi } from "@/admin/services/api";
 const Footer = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+    const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response:any = await productsApi.getAll();
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // Get unique categories
+  const uniqueCategories = useMemo(() => {
+    const cats = [...new Set(products.map((p: Product) => p.category as Category))];
+    return cats as Category[];
+  }, [products]);
   return (
     <footer className="relative bg-card border-t border-border">
       {/* Wave Top */}
@@ -57,7 +84,7 @@ const Footer = () => {
           >
             <h3 className="text-lg font-bold mb-4">Quick Links</h3>
             <ul className="space-y-3">
-              {["Home", "Products", "Features", "About Us", "Contact"].map((link) => (
+              {["Home", "Products", "Features", "Contact"].map((link) => (
                 <li key={link}>
                   <a
                     href={`#${link.toLowerCase().replace(" ", "-")}`}
@@ -78,22 +105,16 @@ const Footer = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="hidden md:block"
           >
-            <h3 className="text-lg font-bold mb-4">Products</h3>
+            <h3 className="text-lg font-bold mb-4">Categories</h3>
             <ul className="space-y-3">
-              {[
-                "Overflow Alarms",
-                "Auto Cut-Off Systems",
-                "Water Level Sensors",
-                "IoT Controllers",
-                "Accessories"
-              ].map((product) => (
-                <li key={product}>
-                  <a
-                    href="#products"
+              {uniqueCategories.slice(0, 5).map((category) => (
+                <li key={category._id}>
+                  <Link
+                    to={`/products?category=${encodeURIComponent(category.name)}`}
                     className="text-muted-foreground hover:text-primary transition-colors inline-block hover:translate-x-1 duration-200"
                   >
-                    {product}
-                  </a>
+                    {category.name}
+                  </Link>
                 </li>
               ))}
             </ul>

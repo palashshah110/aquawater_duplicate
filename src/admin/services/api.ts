@@ -1,9 +1,38 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// Custom error class for API errors
+export class ApiError extends Error {
+  public statusCode: number;
+  public code?: string;
+  public errors?: { field: string; message: string }[];
+
+  constructor(
+    message: string,
+    statusCode: number,
+    code?: string,
+    errors?: { field: string; message: string }[]
+  ) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.code = code;
+    this.errors = errors;
+  }
+}
+
+// Token expiration event
+const TOKEN_EXPIRED_EVENT = 'auth:token-expired';
+
+export const onTokenExpired = (callback: () => void) => {
+  window.addEventListener(TOKEN_EXPIRED_EVENT, callback);
+  return () => window.removeEventListener(TOKEN_EXPIRED_EVENT, callback);
+};
+
 // Generic fetch wrapper with error handling
 async function fetchApi<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retries = 2
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
 
@@ -33,20 +62,84 @@ async function fetchApi<T>(
     };
   }
 
-  const response = await fetch(url, config);
-  const data = await response.json();
+  try {
+    const response = await fetch(url, config);
 
-  if (!response.ok) {
-    // Handle unauthorized - clear token and optionally redirect
-    if (response.status === 401) {
-      localStorage.removeItem('adminToken');
-      // Optionally redirect to login
-      // window.location.href = '/admin/login';
+    // Handle network errors
+    if (!response.ok) {
+      let data: { message?: string; code?: string; errors?: { field: string; message: string }[] };
+
+      try {
+        data = await response.json();
+      } catch {
+        data = { message: 'Network error occurred' };
+      }
+
+      // Handle token expiration
+      if (response.status === 401) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+
+        // Check if token expired specifically
+        if (data.code === 'TOKEN_EXPIRED') {
+          window.dispatchEvent(new CustomEvent(TOKEN_EXPIRED_EVENT));
+        }
+
+        // Redirect to login
+        if (window.location.pathname.startsWith('/admin') &&
+            window.location.pathname !== '/admin/login') {
+          window.location.href = '/admin/login';
+        }
+      }
+
+      // Handle rate limiting
+      if (response.status === 429) {
+        throw new ApiError(
+          data.message || 'Too many requests. Please try again later.',
+          429,
+          'RATE_LIMITED'
+        );
+      }
+
+      // Handle validation errors
+      if (response.status === 400 && data.errors) {
+        throw new ApiError(
+          data.message || 'Validation failed',
+          400,
+          'VALIDATION_ERROR',
+          data.errors
+        );
+      }
+
+      throw new ApiError(
+        data.message || 'Something went wrong',
+        response.status,
+        data.code
+      );
     }
-    throw new Error(data.message || 'Something went wrong');
-  }
 
-  return data;
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Retry on network errors
+    if (error instanceof TypeError && retries > 0) {
+      console.warn(`Retrying request to ${endpoint}... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return fetchApi<T>(endpoint, options, retries - 1);
+    }
+
+    // Re-throw ApiErrors as-is
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    // Wrap other errors
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Network error occurred',
+      0,
+      'NETWORK_ERROR'
+    );
+  }
 }
 
 // Product Types

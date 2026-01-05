@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import LoadingSpinner from "./LoadingSpinner";
 
-const Products = () => {
+const Products = ({isHomePage = false}: {isHomePage?: boolean}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -56,7 +56,9 @@ const Products = () => {
         </motion.div>
         {products.length > 0 ?
           <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
-            {products.map((product, index) => (
+            {isHomePage ? products.filter((product) => product.isFeatured).map((product, index) => (
+              <ProductCard key={product._id} product={product} index={index} />
+            )) : products.map((product, index) => (
               <ProductCard key={product._id} product={product} index={index} />
             ))}
           </div>
