@@ -222,9 +222,9 @@ const Categories = () => {
                   <th className="text-center py-4 px-4 text-sm font-medium text-muted-foreground w-24">
                     Products
                   </th>
-                  <th className="text-center py-4 px-4 text-sm font-medium text-muted-foreground w-24">
+                  {/* <th className="text-center py-4 px-4 text-sm font-medium text-muted-foreground w-24">
                     Status
-                  </th>
+                  </th> */}
                   <th className="text-right py-4 px-4 text-sm font-medium text-muted-foreground w-32">
                     Actions
                   </th>
@@ -243,7 +243,7 @@ const Categories = () => {
                       <td className="py-4 px-4">
                         <div className="flex flex-col gap-1">
                           <span className="text-center text-sm text-muted-foreground">
-                            {category.order}
+                            {index + 1}
                           </span>
                         </div>
                       </td>
@@ -264,7 +264,7 @@ const Categories = () => {
                           {category.productsCount}
                         </span>
                       </td>
-                      <td className="py-4 px-4">
+                      {/* <td className="py-4 px-4">
                         <div className="flex items-center justify-center gap-2">
                           {category.isActive ? (
                             <Eye className="w-4 h-4 text-green-500" />
@@ -278,7 +278,7 @@ const Categories = () => {
                             }
                           />
                         </div>
-                      </td>
+                      </td> */}
                       <td className="py-4 px-4">
                         <div className="flex items-center justify-end gap-2">
                           <DropdownMenu>

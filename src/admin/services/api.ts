@@ -621,7 +621,7 @@ export const articlesApi = {
   },
 
   getById: (id: string) => {
-    return fetchApi<{ success: boolean; data: Article }>(`/articles/${id}`);
+    return fetchApi<{ success: boolean; data: Article }>(`/articles/${id}?admin=true`);
   },
 
   create: (formData: FormData) => {
