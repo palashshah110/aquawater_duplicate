@@ -67,13 +67,17 @@ async function fetchApi<T>(
 
     // Handle network errors
     if (!response.ok) {
-      let data: { message?: string; code?: string; errors?: { field: string; message: string }[] };
+      let data: { message?: string; code?: string; error?: string; errors?: { field: string; message: string }[] };
 
       try {
         data = await response.json();
       } catch {
         data = { message: 'Network error occurred' };
       }
+
+      // Extract detailed error message from backend validation errors
+      // Backend returns: { message: "Error creating product", error: "Product validation failed: discountPrice: Discount price cannot be negative" }
+      const detailedMessage = data.error || data.message || 'Something went wrong';
 
       // Handle token expiration
       if (response.status === 401) {
@@ -104,7 +108,7 @@ async function fetchApi<T>(
       // Handle validation errors
       if (response.status === 400 && data.errors) {
         throw new ApiError(
-          data.message || 'Validation failed',
+          detailedMessage,
           400,
           'VALIDATION_ERROR',
           data.errors
@@ -112,7 +116,7 @@ async function fetchApi<T>(
       }
 
       throw new ApiError(
-        data.message || 'Something went wrong',
+        detailedMessage,
         response.status,
         data.code
       );

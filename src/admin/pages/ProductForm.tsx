@@ -57,6 +57,15 @@ interface ExistingImage {
   publicId: string;
 }
 
+interface ValidationErrors {
+  name?: string;
+  category?: string;
+  price?: string;
+  discountPrice?: string;
+  stock?: string;
+  images?: string;
+}
+
 const ProductForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -65,6 +74,7 @@ const ProductForm = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [categories, setCategories] = useState<string[]>(defaultCategories);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
@@ -187,6 +197,10 @@ const ProductForm = () => {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear validation error when user starts typing
+    if (validationErrors[name as keyof ValidationErrors]) {
+      setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleFeatureChange = (index: number, value: string) => {
@@ -217,6 +231,11 @@ const ProductForm = () => {
 
       const newPreviews = newFilesArray.map((file) => URL.createObjectURL(file));
       setNewImagePreviews((prev) => [...prev, ...newPreviews]);
+
+      // Clear image validation error
+      if (validationErrors.images) {
+        setValidationErrors((prev) => ({ ...prev, images: undefined }));
+      }
     }
 
     if (fileInputRef.current) {
@@ -240,20 +259,48 @@ const ProductForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.category || !formData.price) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
 
+    // Run frontend validation
+    const errors: ValidationErrors = {};
     const totalImages = existingImages.length - imagesToDelete.length + newImages.length;
+
+    if (!formData.name.trim()) {
+      errors.name = 'Product name is required';
+    }
+    if (!formData.category) {
+      errors.category = 'Category is required';
+    }
+    if (!formData.price) {
+      errors.price = 'Price is required';
+    } else if (Number(formData.price) <= 0) {
+      errors.price = 'Price must be greater than 0';
+    }
+    if (formData.discountPrice) {
+      const discountPrice = Number(formData.discountPrice);
+      const price = Number(formData.price);
+      if (discountPrice < 0) {
+        errors.discountPrice = 'Discount price cannot be negative';
+      } else if (price > 0 && discountPrice >= price) {
+        errors.discountPrice = 'Discount price must be less than regular price';
+      }
+    }
+    if (!formData.stock) {
+      errors.stock = 'Stock quantity is required';
+    } else if (Number(formData.stock) < 1) {
+      errors.stock = 'Stock must be at least 1';
+    }
     if (totalImages === 0 && !isEditing) {
-      toast.error('Please upload at least one image');
+      errors.images = 'At least one product image is required';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError);
       return;
     }
 
-    if(Number(formData.stock) < 0) {
-      setFormData((prev) => ({ ...prev, stock: '0' }));
-    }
+    setValidationErrors({});
     setIsLoading(true);
 
     try {
@@ -367,8 +414,11 @@ const ProductForm = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter product name"
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.name ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.name && (
+                  <p className="text-sm text-red-500 mt-1">{validationErrors.name}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -377,11 +427,14 @@ const ProductForm = () => {
                   <div className="flex gap-2 mt-1">
                     <Select
                       value={formData.category}
-                      onValueChange={(value) =>
-                        setFormData((prev) => ({ ...prev, category: value }))
-                      }
+                      onValueChange={(value) => {
+                        setFormData((prev) => ({ ...prev, category: value }));
+                        if (validationErrors.category) {
+                          setValidationErrors((prev) => ({ ...prev, category: undefined }));
+                        }
+                      }}
                     >
-                      <SelectTrigger className="flex-1">
+                      <SelectTrigger className={`flex-1 ${validationErrors.category ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -402,6 +455,9 @@ const ProductForm = () => {
                       <PlusCircle className="w-4 h-4" />
                     </Button>
                   </div>
+                  {validationErrors.category && (
+                    <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="sku">SKU</Label>
@@ -450,10 +506,13 @@ const ProductForm = () => {
               transition={{ delay: 0.1 }}
               className="bg-card rounded-xl p-6 border border-border space-y-4"
             >
-              <h2 className="text-lg font-semibold">Product Images</h2>
+              <h2 className="text-lg font-semibold">Product Images *</h2>
               <p className="text-sm text-muted-foreground">
                 Upload up to 5 images. First image will be the main image.
               </p>
+              {validationErrors.images && (
+                <p className="text-sm text-red-500">{validationErrors.images}</p>
+              )}
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {/* Existing Images */}
@@ -663,11 +722,15 @@ const ProductForm = () => {
                   id="price"
                   name="price"
                   type="number"
+                  min="1"
                   value={formData.price}
                   onChange={handleInputChange}
                   placeholder="0"
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.price ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.price && (
+                  <p className="text-sm text-red-500 mt-1">{validationErrors.price}</p>
+                )}
               </div>
 
               <div>
@@ -676,11 +739,15 @@ const ProductForm = () => {
                   id="discountPrice"
                   name="discountPrice"
                   type="number"
+                  min="0"
                   value={formData.discountPrice}
                   onChange={handleInputChange}
                   placeholder="0"
-                  className="mt-1"
+                  className={`mt-1 ${validationErrors.discountPrice ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.discountPrice && (
+                  <p className="text-sm text-red-500 mt-1">{validationErrors.discountPrice}</p>
+                )}
               </div>
             </motion.div>
 
@@ -694,16 +761,20 @@ const ProductForm = () => {
               <h2 className="text-lg font-semibold">Inventory</h2>
 
               <div>
-                <Label htmlFor="stock">Stock Quantity</Label>
+                <Label htmlFor="stock">Stock Quantity *</Label>
                 <Input
                   id="stock"
                   name="stock"
                   type="number"
+                  min="1"
                   value={formData.stock}
                   onChange={handleInputChange}
-                  placeholder="0"
-                  className="mt-1"
+                  placeholder="1"
+                  className={`mt-1 ${validationErrors.stock ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.stock && (
+                  <p className="text-sm text-red-500 mt-1">{validationErrors.stock}</p>
+                )}
               </div>
             </motion.div>
 
