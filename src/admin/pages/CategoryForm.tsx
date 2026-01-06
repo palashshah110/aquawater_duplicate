@@ -179,9 +179,9 @@ const CategoryForm = () => {
             </div>
 
             {/* Settings */}
-            <div className="bg-card rounded-xl p-6 border border-border space-y-4">
-              <h2 className="text-lg font-semibold">Settings</h2>
-
+            {/* <div className="bg-card rounded-xl p-6 border border-border space-y-4"> */}
+              {/* <h2 className="text-lg font-semibold">Settings</h2> */}
+{/* 
               <div>
                 <Label htmlFor="order">Display Order</Label>
                 <Input
@@ -198,7 +198,7 @@ const CategoryForm = () => {
                 </p>
               </div>
 
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Active</p>
                   <p className="text-sm text-muted-foreground">
@@ -211,8 +211,8 @@ const CategoryForm = () => {
                     setFormData((prev) => ({ ...prev, isActive: checked }))
                   }
                 />
-              </div>
-            </div>
+              </div> */}
+            {/* </div>  */}
 
             {/* Actions */}
             <div className="flex flex-col gap-3">

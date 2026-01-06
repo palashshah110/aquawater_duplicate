@@ -34,11 +34,12 @@ const Navbar = () => {
             className="flex items-center gap-2"
           >
             <div className="relative">
-            <img
+            <Link to="/"> <img
               src={logo}
               alt="shreeflow"
               className="h-18 w-24 md:h-30 md:w-36"
-            />          
+            /></Link>
+          
             </div></motion.div>
 
           {/* Desktop Navigation */}
